@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
+    <UserSecretsId>740c9d2c-5311-42db-b379-ebeee74756fa</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +22,7 @@
 
     <ItemGroup>
       <Folder Include="Plugins\" />
+      <Folder Include="Repository\Conversation\" />
     </ItemGroup>
 
 </Project>
