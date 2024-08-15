@@ -28,12 +28,13 @@ public static class Extension
         services.AddSingleton<FoodPlugin>();
         services.AddSingleton<KnowledgeBasePlugin>();
 
+        
         // Register the Kernel singletone
         services.AddSingleton((sp) => 
         {            
             KernelPluginCollection plugins = [];
-            plugins.AddFromObject(sp.GetRequiredService<FoodPlugin>());
             plugins.AddFromObject(sp.GetService<KnowledgeBasePlugin>());
+            plugins.AddFromObject(sp.GetRequiredService<FoodPlugin>());            
 
             return new Kernel(sp,plugins);
         });

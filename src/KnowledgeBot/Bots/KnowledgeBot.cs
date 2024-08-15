@@ -2,6 +2,7 @@
 using Microsoft.Bot.Schema;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+using System.Text;
 using System.Threading;
 
 namespace KnowledgeBot.Bots
@@ -47,12 +48,18 @@ namespace KnowledgeBot.Bots
                 _logger.LogError($"Cannot find member in the history chat: {memberId}");
                 _chatHistories.Add(memberId, new ChatHistory());
             }
-
+            
+            _chatHistories[memberId].AddUserMessage(question);
+            
             var response = await _chat.GetChatMessageContentAsync(_chatHistories[memberId],
                                                                   _openAIPromptExecutionSettings,
                                                                   _kernel);
- 
-            await turnContext.SendActivityAsync(MessageFactory.Text(question), cancellationToken);
+
+            string answer = response.Items[0].ToString();
+
+            _chatHistories[memberId].AddAssistantMessage(answer);
+
+            await turnContext.SendActivityAsync(MessageFactory.Text(answer), cancellationToken);
         }
 
         protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)

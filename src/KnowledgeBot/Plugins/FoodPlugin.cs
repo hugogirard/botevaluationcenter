@@ -41,9 +41,9 @@ public class FoodPlugin
 
     }
 
-    [KernelFunction("get_popular_dishes")]
+    [KernelFunction("get_popular_recipes")]
     [Description("Get popular dished from Canada")]
-    [return: Description("Popular dishes from Canada based by province")]
+    [return: Description("Popular recipes from Canada based by province")]
     public async Task<List<Recipe>> GetDishes(string question)
     {
         _logger.LogInformation($"Calling FoodPlugin with question: {question}");
@@ -67,9 +67,16 @@ public class FoodPlugin
         return await Task.FromResult(filteredRecipes);
     }
 
+    private string IsAboutFood(string question) { }
+
     private string ExtractProvince(string question)
     {
-        var match = Regex.Match(question, @"\bin\s(\w+)\b", RegexOptions.IgnoreCase);
-        return match.Success ? match.Groups[1].Value : string.Empty;
+        foreach (var province in _recipes.Select(r => r.Province))
+        {
+            if (question.ToLower().Contains(province.ToLower()))
+                return province;
+        }
+
+        return string.Empty;
     }
 }
