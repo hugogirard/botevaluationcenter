@@ -1,0 +1,6 @@
+POST http://localhost:7071/api/get_food_recipe
+Content-Type: application/json
+
+{
+    "question": "Give me good dessert from Quebec"    
+}
