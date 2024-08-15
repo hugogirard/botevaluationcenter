@@ -20,9 +20,4 @@
     </Content>
   </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Plugins\" />
-      <Folder Include="Repository\Conversation\" />
-    </ItemGroup>
-
 </Project>

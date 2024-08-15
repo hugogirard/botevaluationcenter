@@ -1,11 +1,9 @@
 ﻿using KnowledgeBot;
 using KnowledgeBot.Infrastructure;
-using KnowledgeBot.Options;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Integration.AspNet.Core;
 using Microsoft.Bot.Connector.Authentication;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -17,6 +15,8 @@ builder.Services.AddHttpClient().AddControllers().AddNewtonsoftJson(options =>
 });
 
 builder.Services.AddSingleton<BotFrameworkAuthentication, ConfigurationBotFrameworkAuthentication>();
+
+builder.Services.AddSingleton<IKnowledgeBaseService,KnowledgeBaseService>();
 
 builder.Services.RegisterSemanticKernel(builder.Configuration);
 

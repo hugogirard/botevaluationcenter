@@ -1,4 +1,5 @@
 ﻿using KnowledgeBot.Options;
+using KnowledgeBot.Plugins;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -24,11 +25,17 @@ public static class Extension
         });
 
         // Register the plugin here
+        services.AddSingleton<FoodPlugin>();
+        services.AddSingleton<KnowledgeBasePlugin>();
 
         // Register the Kernel singletone
         services.AddSingleton((sp) => 
         {            
-            return new Kernel(sp);
+            KernelPluginCollection plugins = [];
+            plugins.AddFromObject(sp.GetRequiredService<FoodPlugin>());
+            plugins.AddFromObject(sp.GetService<KnowledgeBasePlugin>());
+
+            return new Kernel(sp,plugins);
         });
     }
 }
