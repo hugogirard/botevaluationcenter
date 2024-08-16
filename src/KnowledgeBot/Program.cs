@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Integration.AspNet.Core;
 using Microsoft.Bot.Connector.Authentication;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.AzureAppConfiguration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -12,6 +14,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpClient().AddControllers().AddNewtonsoftJson(options =>
 {
     options.SerializerSettings.MaxDepth = HttpHelper.BotMessageSerializerSettings.MaxDepth;
+});
+
+string connectionString = builder.Configuration["AppConfig"];
+
+// Load configuration from Azure App Configuration
+builder.Configuration.AddAzureAppConfiguration(options => 
+{
+    options.Connect(builder.Configuration["AppConfig"])
+           .Select("KnowledgeBase")
+           .ConfigureRefresh(refreshOptions =>
+                   refreshOptions.Register("KnowledgeBase", refreshAll: true)); ;           
 });
 
 builder.Services.AddSingleton<BotFrameworkAuthentication, ConfigurationBotFrameworkAuthentication>();

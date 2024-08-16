@@ -1,0 +1,14 @@
+{
+    "KnowledgeBase": {
+        "KnowledgeConfiguration": [
+            {
+                "name": "quebecfunfact",
+                "appRoles": "Admin,QuebecAdmin"
+            },
+            {
+                "name": "canadaqna",
+                "appRoles": "Admin,CanadaAdmin"
+            }
+        ]
+    }
+}

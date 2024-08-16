@@ -14,27 +14,26 @@ public class KnowledgeBaseService : IKnowledgeBaseService
     QuestionAnsweringClient _client;
     QuestionAnsweringProject _project;
     private readonly ILogger<KnowledgeBaseService> _logger;
-
-    public string ProjectName { get;  private set; }
+    private Dictionary<string, QuestionAnsweringProject> _projects = new();
 
     public KnowledgeBaseService(IConfiguration configuration, ILogger<KnowledgeBaseService> logger)
     {
         Uri endpoint = new Uri(configuration["LANGUAGESRV:ENDPOINT"]);
-        AzureKeyCredential credential = new AzureKeyCredential(configuration["LANGUAGESRV:KEY"]);
-        ProjectName = configuration["LANGUAGESRV:PROJECT_NAME"];
+        AzureKeyCredential credential = new AzureKeyCredential(configuration["LANGUAGESRV:KEY"]);        
         string deploymentName = "production";
 
-        _client = new(endpoint, credential);
-        _project = new(ProjectName, deploymentName);
+        _client = new(endpoint, credential);     
         _logger = logger;
     }
 
-    public async Task<IEnumerable<string>> GetAnswersAsync(string question)
+    public async Task<IEnumerable<string>> GetAnswersAsync(string question, string projectName)
     {
         List<string> answers = new();
         try
         {
-            Response<AnswersResult> response = await _client.GetAnswersAsync(question, _project);
+            var project = GetProjectClient(projectName);
+
+            Response<AnswersResult> response = await _client.GetAnswersAsync(question, project);
 
             foreach (KnowledgeBaseAnswer answer in response.Value.Answers)
             {
@@ -47,5 +46,16 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         }
 
         return answers;
+    }
+
+    private QuestionAnsweringProject GetProjectClient(string projectName) 
+    {
+        if (_projects.ContainsKey(projectName))
+            return _projects[projectName];
+
+        QuestionAnsweringProject project = new(projectName, "production");
+        _projects.Add(projectName, project);
+
+        return project;
     }
 }

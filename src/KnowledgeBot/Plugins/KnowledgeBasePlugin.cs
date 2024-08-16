@@ -6,11 +6,13 @@ public class KnowledgeBasePlugin
 {
     private readonly IKnowledgeBaseService _service;
     private ILogger<KnowledgeBasePlugin> _logger;
+    private readonly string _kbName;
 
-    public KnowledgeBasePlugin(ILogger<KnowledgeBasePlugin> logger,IKnowledgeBaseService service)
+    public KnowledgeBasePlugin(ILogger<KnowledgeBasePlugin> logger,IKnowledgeBaseService service, string kbName)
     {
         _service = service;
         _logger = logger;
+        _kbName = kbName;
     }
 
     [KernelFunction("get_from_kb")]
@@ -20,7 +22,7 @@ public class KnowledgeBasePlugin
     {
         _logger.LogInformation($"Called plugin KnowledgeBase with parameter: {question}");
 
-        var answers = await _service.GetAnswersAsync(question);
+        var answers = await _service.GetAnswersAsync(question, _kbName);
         
         if (answers.Count() == 0)
         {
