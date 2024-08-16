@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using System;
 using System.Linq;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 
 namespace KnowledgeBot.Plugins;
@@ -21,7 +23,49 @@ public class FoodPlugin
     List<Recipe> _recipes;
     private readonly ILogger<FoodPlugin> _logger;
 
-    public FoodPlugin(ILogger<FoodPlugin> logger)
+    List<string> synonyms = new List<string>()
+    {  
+        // Recipe synonyms  
+        "Formula",
+        "Method",
+        "Procedure",
+        "Instructions",
+        "Cookery",
+        "Dish",
+        "Guide",
+        "Creation",
+        "Menu",
+        "Instruction",
+        "Plan",
+        "Technique",
+        "Prescription",
+        "Secret",  
+      
+        // Food synonyms  
+        "Cuisine",
+        "Dish",
+        "Meal",
+        "Fare",
+        "Cooking",
+        "Edibles",
+        "Nourishment",
+        "Provisions",
+        "Sustenance",
+        "Nutrition",
+        "Eatables",
+        "Comestibles",
+        "Gastronomy",
+        "Culinary",
+        "Catering",
+        "Grub",
+        "Repast",
+        "Chow",
+        "Fodder",
+        "Provender"
+    };
+
+
+    public FoodPlugin(ILogger<FoodPlugin> logger, IHttpClientFactory httpClientFactory, IConfiguration configuration)
     {
         _recipes = new List<Recipe>()
         {
@@ -48,6 +92,9 @@ public class FoodPlugin
     {
         _logger.LogInformation($"Calling FoodPlugin with question: {question}");
 
+        if (!IsAboutFood(question))
+            return new List<Recipe>();
+
         string province = ExtractProvince(question);
         var filteredRecipes = _recipes.Where(d => d.Province.Equals(province, StringComparison.OrdinalIgnoreCase)).ToList();
 
@@ -67,7 +114,13 @@ public class FoodPlugin
         return await Task.FromResult(filteredRecipes);
     }
 
-    private string IsAboutFood(string question) { }
+    private bool IsAboutFood(string question) 
+    {
+        if (question.ToLower().Contains(question.ToLower()))
+            return true;
+
+        return false;
+    }
 
     private string ExtractProvince(string question)
     {
