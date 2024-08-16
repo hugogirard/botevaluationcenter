@@ -6,4 +6,6 @@ namespace KnowledgeBot.Services;
 public interface IKnowledgeBaseService
 {
     Task<IEnumerable<string>> GetAnswersAsync(string question);
+
+    string ProjectName { get; }
 }

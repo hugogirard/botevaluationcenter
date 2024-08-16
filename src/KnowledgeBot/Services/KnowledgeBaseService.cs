@@ -15,15 +15,17 @@ public class KnowledgeBaseService : IKnowledgeBaseService
     QuestionAnsweringProject _project;
     private readonly ILogger<KnowledgeBaseService> _logger;
 
+    public string ProjectName { get;  private set; }
+
     public KnowledgeBaseService(IConfiguration configuration, ILogger<KnowledgeBaseService> logger)
     {
         Uri endpoint = new Uri(configuration["LANGUAGESRV:ENDPOINT"]);
         AzureKeyCredential credential = new AzureKeyCredential(configuration["LANGUAGESRV:KEY"]);
-        string projectName = configuration["LANGUAGESRV:PROJECT_NAME"];
+        ProjectName = configuration["LANGUAGESRV:PROJECT_NAME"];
         string deploymentName = "production";
 
         _client = new(endpoint, credential);
-        _project = new(projectName, deploymentName);
+        _project = new(ProjectName, deploymentName);
         _logger = logger;
     }
 
