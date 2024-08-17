@@ -1,6 +1,5 @@
 ﻿using KnowledgeBot.Models;
 using KnowledgeBot.Options;
-using KnowledgeBot.Plugins;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
