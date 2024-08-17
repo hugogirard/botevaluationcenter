@@ -6,6 +6,10 @@ using System.Threading;
 using System;
 using Microsoft.SemanticKernel.ChatCompletion;
 using KnowledgeBot.Plugins;
+using Microsoft.Azure.Cosmos.Serialization.HybridRow;
+using Microsoft.SemanticKernel;
+using System.Text.Json;
+using Azure.AI.OpenAI;
 
 namespace KnowledgeBot.Services.Chat;
 
@@ -46,7 +50,7 @@ public class ChatService : IChatService
 
         OpenAIPromptExecutionSettings openAIPromptExecutionSettings = new()
         {
-            ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
+            ToolCallBehavior = ToolCallBehavior.EnableKernelFunctions,
             MaxTokens = 2000,
             Temperature = 0.7,
             ChatSystemPrompt = _systemPromptPlugin
@@ -54,20 +58,67 @@ public class ChatService : IChatService
 
         history.AddUserMessage(question);
 
-        var response = await _chat.GetChatMessageContentAsync(history, openAIPromptExecutionSettings, _kernel);
+        // This won't call OpenAI but determine if one plugin needs to be called
+        // if it's the case we call manually, we cannot trust OpenAI even with
+        // or system prompt since it can hallucinate
+        var manualResult = (OpenAIChatMessageContent)await _chat.GetChatMessageContentAsync(history, openAIPromptExecutionSettings, _kernel);
 
-        string answer = response.Items[0].ToString();
-        
-        // Validate function call
-
-
-        if (answer.ToLower().Contains("i don't know"))
-        {            
-            // For now return I don't know but more to come
+        List<ChatCompletionsFunctionToolCall> toolCalls = manualResult.ToolCalls.OfType<ChatCompletionsFunctionToolCall>().ToList();
+        if (toolCalls.Count == 0)
+        {
             return "I don't have this answer, an agent will comeback to you soon";
         }
+        history.Add(manualResult);
 
-        return answer;
+        bool answerFoundFromKb = false;
+        foreach (var toolCall in toolCalls)
+        {
+
+            KernelFunction pluginFunction;
+            KernelArguments arguments;
+            _kernel.Plugins.TryGetFunctionAndArguments(toolCall, out pluginFunction, out arguments);
+            var functionResult = await _kernel.InvokeAsync(pluginFunction!, arguments!);
+            var jsonResponse = functionResult.GetValue<object>();
+            var json = JsonSerializer.Serialize(jsonResponse);
+
+            // This is what or Language Service return 
+            // when it found nothing
+            if (!json.ToLower().Contains("no answer found"))
+            {
+                answerFoundFromKb = true;
+                history.Add(new ChatMessageContent(AuthorRole.Tool,
+                                                   json,
+                                                   metadata: new Dictionary<string, object?>(1) { { OpenAIChatMessageContent.ToolIdProperty, toolCall.Id } }));
+            }
+        }
+        
+        try
+        {
+            if (answerFoundFromKb)
+            {
+                var response = await _chat.GetChatMessageContentAsync(history, openAIPromptExecutionSettings, _kernel);
+
+                // Still possible language service found some answer that make no sense
+                // the ChatGTP will return I don't know
+                if (response.Items[0].ToString().ToLower().Contains("i don't know")) 
+                {
+                    return "No answer found from our Knowledge Base, an agent will comeback to you soon";
+                }
+
+                return response.Items[0].ToString();
+            }
+            else 
+            {
+                // Do something else here
+                return "No answer found from our Knowledge Base, an agent will comeback to you soon";
+            }
+
+        }
+        catch (Exception ex)
+        {
+
+            return "Oh no, our bot is out of office, an agent will comeback to you soon";
+        }
     }
 
 }
