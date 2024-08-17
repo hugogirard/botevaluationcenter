@@ -1,39 +1,58 @@
-﻿using Microsoft.Bot.Builder;
+﻿using Azure.AI.Language.QuestionAnswering;
+using KnowledgeBot.Models;
+using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
+using Microsoft.Identity.Client;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+using System.Collections.Generic;
+using System;
+using System.Linq;
 using System.Text;
 using System.Threading;
+using Microsoft.SemanticKernel;
 
 namespace KnowledgeBot.Bots
 {
     public class KnowledgeBot : ActivityHandler
     {        
-        private readonly Kernel _kernel;
         private readonly ILogger<KnowledgeBot> _logger;
         private Dictionary<string,ChatHistory> _chatHistories;
-        private readonly IChatCompletionService _chat;
+        private readonly KnowledgeBaseConfiguration _knowledgeBaseConfiguration;
+        private readonly IKnowledgeBaseService _knowledgeBaseService;
+        private readonly string _systemPrompt;
         private readonly OpenAIPromptExecutionSettings _openAIPromptExecutionSettings;
+        private readonly Kernel _kernel;
+        private readonly KernelFunction _chat;
 
         public KnowledgeBot(Kernel kernel,
-                            IChatCompletionService chatCompletionService,
+                            IKnowledgeBaseService knowledgeBaseService,
+                            KnowledgeBaseConfiguration knowledgeBaseConfiguration,
                             ILogger<KnowledgeBot> logger)
         {
-            _kernel = kernel;
             _logger = logger;
             _chatHistories = new Dictionary<string,ChatHistory>();
-            _chat = chatCompletionService;
+            _knowledgeBaseConfiguration = knowledgeBaseConfiguration;
+            _knowledgeBaseService = knowledgeBaseService;
 
-            string systemPrompt = @"You are a chat company assistant, you answer question from your 
-                                    native function reply I don't have the information, sorry if you don't know.";
+             _systemPrompt = @"ChatBot can have a conversation with you about any topic.
+                               You answer the question based on the context provided otherwise you say 'I don't know' if it does not have an answer.
+                               {{$context}}
+
+                               {{$history}}
+                               User: {{$userInput}}
+                               ChatBot:";
+
+
 
             _openAIPromptExecutionSettings = new()
             {
-                ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
-                ChatSystemPrompt = systemPrompt,
                 MaxTokens = 2000,
-                Temperature = 0.7,                
+                Temperature = 0.7,
             };
+
+            _kernel = kernel;
+            _chat = kernel.CreateFunctionFromPrompt(_systemPrompt, _openAIPromptExecutionSettings);
         }
 
         protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
@@ -48,18 +67,45 @@ namespace KnowledgeBot.Bots
                 _logger.LogError($"Cannot find member in the history chat: {memberId}");
                 _chatHistories.Add(memberId, new ChatHistory());
             }
-            
-            _chatHistories[memberId].AddUserMessage(question);
-            
-            var response = await _chat.GetChatMessageContentAsync(_chatHistories[memberId],
-                                                                  _openAIPromptExecutionSettings,
-                                                                  _kernel);
 
-            string answer = response.Items[0].ToString();
+            // Load all Knowledge base
+            _knowledgeBaseConfiguration.LoadConfiguration();
+            string msgKb = string.Empty;
+            var history = "";
+            var arguments = new KernelArguments()
+            {
+                ["history"] = history
+            };
+            arguments["userInput"] = question;
+            bool answerFound = false;
+            foreach (var kb in _knowledgeBaseConfiguration.KnowledgeConfiguration) 
+            {
+                msgKb = $"Searching in {kb.displayName} ...";
+                await turnContext.SendActivityAsync(MessageFactory.Text(msgKb), cancellationToken);
 
-            _chatHistories[memberId].AddAssistantMessage(answer);
+                var answers = await _knowledgeBaseService.GetAnswersAsync(question, kb.name);
 
-            await turnContext.SendActivityAsync(MessageFactory.Text(answer), cancellationToken);
+                if (answers.Any())
+                {
+                    string context = string.Join(Environment.NewLine, answers);
+                    arguments["context"] = context;
+                    answerFound = true;
+                    break;
+                }
+            }
+
+            string chatAnswer = string.Empty;
+            if (answerFound)
+            {
+                var response = await _chat.InvokeAsync(_kernel, arguments);
+                chatAnswer = response.ToString();
+            }
+            else 
+            {
+                chatAnswer = "I don't know";
+            }
+
+            await turnContext.SendActivityAsync(MessageFactory.Text(chatAnswer), cancellationToken);
         }
 
         protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)

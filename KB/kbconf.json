@@ -2,10 +2,12 @@
     "KnowledgeBase": {
         "KnowledgeConfiguration": [
             {
+                "displayName": "Quebec Fun Fact Knowledge Base",
                 "name": "quebecfunfact",
                 "appRoles": "Admin,QuebecAdmin"
             },
             {
+                "displayName": "Canada QnA Knowledge Base",
                 "name": "canadaqna",
                 "appRoles": "Admin,CanadaAdmin"
             }

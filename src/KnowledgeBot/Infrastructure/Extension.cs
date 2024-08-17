@@ -19,49 +19,14 @@ public static class Extension
     /// </summary>    
     public static void RegisterSemanticKernel(this IServiceCollection services, IConfiguration configuration) 
     {
-        services.AddSingleton<IChatCompletionService>(sp =>
-        {            
-            // A custom HttpClient can be provided to this constructor
-            return new AzureOpenAIChatCompletionService(configuration["AzureOpenAI:ChatDeploymentName"], 
-                                                        configuration["AzureOpenAI:Endpoint"], 
-                                                        configuration["AzureOpenAI:ApiKey"]);
-        });
+        services.AddSingleton<KnowledgeBaseConfiguration>();
 
-        // Register the plugin here
-        services.AddSingleton<FoodPlugin>();
+        var builder = Kernel.CreateBuilder();
+        builder.AddAzureOpenAIChatCompletion(configuration["AzureOpenAI:ChatDeploymentName"],
+                                             configuration["AzureOpenAI:Endpoint"],
+                                             configuration["AzureOpenAI:ApiKey"]);
 
-        KnowledgeBaseConfiguration conf = new();
-        var section = configuration.GetSection("KnowledgeBase");
-        configuration.GetSection("KnowledgeBase").Bind(conf);
-
-        //KnowledgeBaseConfiguration conf = JsonSerializer.Deserialize<KnowledgeBaseConfiguration>(kbConfiguration);
-
-        // Create instance of all KB plugin loaded from configuration
-        foreach (var kb in conf.KnowledgeConfiguration) 
-        {
-            services.AddKeyedSingleton<KnowledgeBasePlugin>(kb.name, (sp, key) =>
-            {
-                var loggerFactory = sp.GetService<ILoggerFactory>();
-                var knowledgeBaseService = sp.GetService<IKnowledgeBaseService>();
-
-                return new KnowledgeBasePlugin(loggerFactory.CreateLogger<KnowledgeBasePlugin>(), knowledgeBaseService, kb.name);
-            });
-        }
-        
         // Register the Kernel singletone
-        services.AddSingleton((sp) => 
-        {            
-            KernelPluginCollection plugins = [];
-
-            // Register all plugins of KB in the kernel
-            foreach (var kb in conf.KnowledgeConfiguration) 
-            {
-                plugins.AddFromObject(sp.GetRequiredKeyedService<KnowledgeBasePlugin>(kb.name),kb.name);
-            }
-
-            plugins.AddFromObject(sp.GetRequiredService<FoodPlugin>());            
-
-            return new Kernel(sp,plugins);
-        });
+        services.AddSingleton(builder.Build());
     }
 }
