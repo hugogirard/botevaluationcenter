@@ -4,17 +4,21 @@ using Microsoft.SemanticKernel.Connectors.OpenAI;
 using System.Linq;
 using System.Threading;
 using System;
+using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace KnowledgeBot.Services.Chat;
 
 public class ChatService : IChatService
 {
     private readonly Kernel _kernel;
-    private readonly KernelFunction _chat;
+    private readonly IChatCompletionService _chat;
     private readonly KnowledgeBaseConfiguration _knowledgeBaseConfiguration;
+    private readonly string _systemPrompt;
+    private readonly string _systemPrompt_answer;
     private readonly IKnowledgeBaseService _knowledgeBaseService;
 
     public ChatService(Kernel kernel,
+                       IChatCompletionService chat,
                        IKnowledgeBaseService knowledgeBaseService,
                        KnowledgeBaseConfiguration knowledgeBaseConfiguration)
     {
@@ -26,9 +30,17 @@ public class ChatService : IChatService
                          {{$context}}
 
                          User: {{$userInput}}
-                         ChatBot:"
-        ;
+                         ChatBot:";
 
+        _systemPrompt = @"You are an intelligent assistant helping employees with their questions.
+                          Answer the following question using only the data provided in the context below.           
+                          If you cannot answer using the context below, say you don't know.     
+                          {{$context}}";
+
+        _systemPrompt_answer = @"You are an intelligent assistant helping employees with their questions.
+                              Answer the following question using only the answer provided below.           
+                              If you cannot answer using the answer below, say you don't know.     
+                              answer: {{$context}}";
 
         _knowledgeBaseService = knowledgeBaseService;
         _knowledgeBaseConfiguration = knowledgeBaseConfiguration;
@@ -40,7 +52,8 @@ public class ChatService : IChatService
         };
 
         _kernel = kernel;
-        _chat = kernel.CreateFunctionFromPrompt(skPrompt, openAIPromptExecutionSettings);
+        _chat = chat;
+        //_chat = kernel.CreateFunctionFromPrompt(skPrompt, openAIPromptExecutionSettings);
     }
 
 
@@ -49,9 +62,15 @@ public class ChatService : IChatService
 
         _knowledgeBaseConfiguration.LoadConfiguration();
         string msgKb = string.Empty;
-        var history = "";
-        var arguments = new KernelArguments();
-        arguments["userInput"] = question;
+        var history = new ChatHistory();
+        //var arguments = new KernelArguments();
+        //arguments["userInput"] = question;
+
+        OpenAIPromptExecutionSettings openAIPromptExecutionSettings = new()
+        {
+            MaxTokens = 2000,
+            Temperature = 0.7,
+        };
 
         bool answerFound = false;
         foreach (var kb in _knowledgeBaseConfiguration.KnowledgeConfiguration)
@@ -64,18 +83,19 @@ public class ChatService : IChatService
             if (answers.Any())
             {
                 string context = string.Join(Environment.NewLine, answers);
-                arguments["context"] = context;
-                answerFound = true;
                 return context;
-              
+                //arguments["context"] = context;
+                //answerFound = true;
+                //break;
             }
         }
 
         string chatAnswer = string.Empty;
         if (answerFound)
         {
-            var response = await _chat.InvokeAsync(_kernel, arguments);
-            chatAnswer = response.ToString();
+            var response = await _chat.GetChatMessageContentAsync(history, openAIPromptExecutionSettings, _kernel);
+            //var response = await _chat.InvokeAsync(_kernel, arguments);
+            chatAnswer = response.Items[0].ToString();
         }
         else
         {

@@ -20,10 +20,16 @@ public static class Extension
     {
         services.AddSingleton<KnowledgeBaseConfiguration>();
 
+        var chatCompletion = new AzureOpenAIChatCompletionService(configuration["AzureOpenAI:ChatDeploymentName"],
+                                                                  configuration["AzureOpenAI:Endpoint"],
+                                                                  configuration["AzureOpenAI:ApiKey"]);
+
+        services.AddSingleton<IChatCompletionService>(chatCompletion);
+
         var builder = Kernel.CreateBuilder();
-        builder.AddAzureOpenAIChatCompletion(configuration["AzureOpenAI:ChatDeploymentName"],
-                                             configuration["AzureOpenAI:Endpoint"],
-                                             configuration["AzureOpenAI:ApiKey"]);
+        //builder.AddAzureOpenAIChatCompletion(configuration["AzureOpenAI:ChatDeploymentName"],
+        //                                     configuration["AzureOpenAI:Endpoint"],
+        //                                     configuration["AzureOpenAI:ApiKey"]);
 
         // Register the Kernel singletone
         services.AddSingleton(builder.Build());
