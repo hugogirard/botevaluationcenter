@@ -1,39 +1,31 @@
-﻿using Microsoft.Bot.Builder;
+﻿using Azure.AI.Language.QuestionAnswering;
+using KnowledgeBot.Models;
+using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
+using Microsoft.Identity.Client;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+using System.Collections.Generic;
+using System;
+using System.Linq;
 using System.Text;
 using System.Threading;
+using Microsoft.SemanticKernel;
 
 namespace KnowledgeBot.Bots
 {
     public class KnowledgeBot : ActivityHandler
     {        
-        private readonly Kernel _kernel;
         private readonly ILogger<KnowledgeBot> _logger;
         private Dictionary<string,ChatHistory> _chatHistories;
-        private readonly IChatCompletionService _chat;
-        private readonly OpenAIPromptExecutionSettings _openAIPromptExecutionSettings;
+        private readonly IChatService _chatService;
 
-        public KnowledgeBot(Kernel kernel,
-                            IChatCompletionService chatCompletionService,
+        public KnowledgeBot(IChatService chatService,
                             ILogger<KnowledgeBot> logger)
         {
-            _kernel = kernel;
             _logger = logger;
             _chatHistories = new Dictionary<string,ChatHistory>();
-            _chat = chatCompletionService;
-
-            string systemPrompt = @"You are a chat company assistant, you answer question from your 
-                                    native function reply I don't have the information, sorry if you don't know.";
-
-            _openAIPromptExecutionSettings = new()
-            {
-                ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
-                ChatSystemPrompt = systemPrompt,
-                MaxTokens = 2000,
-                Temperature = 0.7,                
-            };
+            _chatService = chatService;
         }
 
         protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
@@ -42,24 +34,9 @@ namespace KnowledgeBot.Bots
 
             string memberId = turnContext.Activity.Recipient.Id;
 
-            // This should happen but in case we need to create the system prompt
-            if (!_chatHistories.ContainsKey(memberId))
-            {
-                _logger.LogError($"Cannot find member in the history chat: {memberId}");
-                _chatHistories.Add(memberId, new ChatHistory());
-            }
-            
-            _chatHistories[memberId].AddUserMessage(question);
-            
-            var response = await _chat.GetChatMessageContentAsync(_chatHistories[memberId],
-                                                                  _openAIPromptExecutionSettings,
-                                                                  _kernel);
+            var chatAnswer = await _chatService.GetCompletionAsync(question);
 
-            string answer = response.Items[0].ToString();
-
-            _chatHistories[memberId].AddAssistantMessage(answer);
-
-            await turnContext.SendActivityAsync(MessageFactory.Text(answer), cancellationToken);
+            await turnContext.SendActivityAsync(MessageFactory.Text(chatAnswer), cancellationToken);
         }
 
         protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)

@@ -36,6 +36,8 @@ builder.Services.RegisterSemanticKernel(builder.Configuration);
 // Create the Bot Adapter with error handling enabled.
 builder.Services.AddSingleton<IBotFrameworkHttpAdapter, AdapterWithErrorHandler>();
 
+builder.Services.AddSingleton<IChatService, ChatService>();
+
 builder.Services.AddTransient<IBot, KnowledgeBot.Bots.KnowledgeBot>();
 
 var app = builder.Build();
