@@ -1,5 +1,6 @@
 ﻿using KnowledgeBot.Models;
 using KnowledgeBot.Options;
+using KnowledgeBot.Plugins;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -18,20 +19,58 @@ public static class Extension
     /// </summary>    
     public static void RegisterSemanticKernel(this IServiceCollection services, IConfiguration configuration) 
     {
-        services.AddSingleton<KnowledgeBaseConfiguration>();
+        services.AddSingleton<IChatCompletionService>(sp =>
+        {            
+            return new AzureOpenAIChatCompletionService(configuration["AzureOpenAI:ChatDeploymentName"],
+                                                        configuration["AzureOpenAI:Endpoint"],
+                                                        configuration["AzureOpenAI:ApiKey"]);
+        });
 
-        var chatCompletion = new AzureOpenAIChatCompletionService(configuration["AzureOpenAI:ChatDeploymentName"],
-                                                                  configuration["AzureOpenAI:Endpoint"],
-                                                                  configuration["AzureOpenAI:ApiKey"]);
+        KnowledgeBaseConfiguration conf = new();
+        var section = configuration.GetSection("KnowledgeBase");
+        configuration.GetSection("KnowledgeBase").Bind(conf);
 
-        services.AddSingleton<IChatCompletionService>(chatCompletion);
+        foreach (var kb in conf.KnowledgeConfiguration)
+        {
+            services.AddKeyedSingleton(kb.name, (sp, key) =>
+            {
+                var loggerFactory = sp.GetService<ILoggerFactory>();
+                var knowledgeBaseService = sp.GetService<IKnowledgeBaseService>();
 
-        var builder = Kernel.CreateBuilder();
-        //builder.AddAzureOpenAIChatCompletion(configuration["AzureOpenAI:ChatDeploymentName"],
-        //                                     configuration["AzureOpenAI:Endpoint"],
-        //                                     configuration["AzureOpenAI:ApiKey"]);
+                return new KnowledgeBasePlugin(loggerFactory.CreateLogger<KnowledgeBasePlugin>(), knowledgeBaseService, kb.name);
+            });
+        }
 
         // Register the Kernel singletone
-        services.AddSingleton(builder.Build());
+        services.AddSingleton((sp) =>
+        {
+            KernelPluginCollection plugins = [];
+
+            // Register all plugins of KB in the kernel
+            foreach (var kb in conf.KnowledgeConfiguration)
+            {
+                plugins.AddFromObject(sp.GetRequiredKeyedService<KnowledgeBasePlugin>(kb.name), kb.name);
+            }
+
+            //plugins.AddFromObject(sp.GetRequiredService<KnowledgeBasePlugin>());
+
+            return new Kernel(sp, plugins);
+        });
+
+
+
+        //var chatCompletion = new AzureOpenAIChatCompletionService(configuration["AzureOpenAI:ChatDeploymentName"],
+        //                                                          configuration["AzureOpenAI:Endpoint"],
+        //                                                          configuration["AzureOpenAI:ApiKey"]);
+
+        //services.AddSingleton<IChatCompletionService>(chatCompletion);
+
+        //var builder = Kernel.CreateBuilder();
+        ////builder.AddAzureOpenAIChatCompletion(configuration["AzureOpenAI:ChatDeploymentName"],
+        ////                                     configuration["AzureOpenAI:Endpoint"],
+        ////                                     configuration["AzureOpenAI:ApiKey"]);
+
+        //// Register the Kernel singletone
+        //services.AddSingleton(builder.Build());
     }
 }
