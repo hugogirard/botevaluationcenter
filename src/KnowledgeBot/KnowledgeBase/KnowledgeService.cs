@@ -1,24 +1,23 @@
-﻿using System.Linq;
+﻿
+using KnowledgeBot.Plugins;
+using System.Linq;
 
-namespace KnowledgeBot.Plugins;
+namespace KnowledgeBot.KnowledgeBase;
 
-public class KnowledgeBasePlugin
+public class KnowledgeService : IKnowledgeService
 {
-    private readonly IKnowledgeBaseService _service;
-    private ILogger<KnowledgeBasePlugin> _logger;
+    private readonly ILanguageService _service;
+    private ILogger<KnowledgeService> _logger;
     private readonly string _kbName;
 
-    public KnowledgeBasePlugin(ILogger<KnowledgeBasePlugin> logger, IKnowledgeBaseService service, string kbName)
+    public KnowledgeService(ILogger<KnowledgeService> logger, ILanguageService service, string kbName)
     {
         _service = service;
         _logger = logger;
         _kbName = kbName;
     }
 
-    [KernelFunction("get_from_kb")]
-    [Description("Search in AI Language Service from custom knowledge base")]
-    [return: Description("Answers from the knowledge base from the question asked")]
-    public async Task<IEnumerable<string>> GetAnswerKB([Description("question of the user")] string question)
+    public async Task<IEnumerable<string>> GetAnswerKB(string question)
     {
         _logger.LogInformation($"Called plugin KnowledgeBase with parameter: {question}");
 

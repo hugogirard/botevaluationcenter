@@ -9,14 +9,14 @@ using System.Collections.Generic;
 
 namespace KnowledgeBot.Services;
 
-public class KnowledgeBaseService : IKnowledgeBaseService
+public class LanguageService : ILanguageService
 {
     QuestionAnsweringClient _client;
     QuestionAnsweringProject _project;
-    private readonly ILogger<KnowledgeBaseService> _logger;
+    private readonly ILogger<LanguageService> _logger;
     private Dictionary<string, QuestionAnsweringProject> _projects = new();
 
-    public KnowledgeBaseService(IConfiguration configuration, ILogger<KnowledgeBaseService> logger)
+    public LanguageService(IConfiguration configuration, ILogger<LanguageService> logger)
     {
         Uri endpoint = new Uri(configuration["LANGUAGESRV:ENDPOINT"]);
         AzureKeyCredential credential = new AzureKeyCredential(configuration["LANGUAGESRV:KEY"]);        
