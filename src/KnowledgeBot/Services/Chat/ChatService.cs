@@ -5,13 +5,13 @@ using System.Linq;
 using System.Threading;
 using System;
 using Microsoft.SemanticKernel.ChatCompletion;
-using KnowledgeBot.Plugins;
 using Microsoft.Azure.Cosmos.Serialization.HybridRow;
 using Microsoft.SemanticKernel;
 using System.Text.Json;
 using Azure.AI.OpenAI;
 using System.Net.NetworkInformation;
 using KnowledgeBot.KnowledgeBase;
+using Microsoft.Bot.Schema;
 
 namespace KnowledgeBot.Services.Chat;
 
@@ -44,7 +44,7 @@ public class ChatService : IChatService
     }
 
 
-    public async Task<string> GetCompletionAsync(string question)
+    public async Task<string> GetCompletionAsync(string question, ITurnContext<IMessageActivity> turnContext)
     {
         var history = new ChatHistory();
 
@@ -58,7 +58,7 @@ public class ChatService : IChatService
         {
             // Loop all the KBs
             foreach (var kb in _knowledgeBaseCollection.GetKnowledgeBases())
-            {
+            {                
                 var answers = await kb.Value.GetAnswerKB(question);
                 if (answers.Any() && !answers.First().Contains("NA"))
                 {

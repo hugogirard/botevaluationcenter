@@ -1,7 +1,7 @@
 ﻿using KnowledgeBot.KnowledgeBase;
 using KnowledgeBot.Models;
 using KnowledgeBot.Options;
-using KnowledgeBot.Plugins;
+
 using KnowledgeBot.RAG;
 using KnowledgeBot.Services;
 using Microsoft.Extensions.Configuration;

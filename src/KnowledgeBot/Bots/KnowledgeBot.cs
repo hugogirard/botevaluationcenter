@@ -34,7 +34,7 @@ namespace KnowledgeBot.Bots
 
             string memberId = turnContext.Activity.Recipient.Id;
 
-            var chatAnswer = await _chatService.GetCompletionAsync(question);
+            var chatAnswer = await _chatService.GetCompletionAsync(question, turnContext);
 
             await turnContext.SendActivityAsync(MessageFactory.Text(chatAnswer), cancellationToken);
         }
