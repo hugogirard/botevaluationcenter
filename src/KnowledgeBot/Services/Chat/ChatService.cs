@@ -30,7 +30,7 @@ public class ChatService : IChatService
                        KnowledgeBaseCollection knowledgeBaseCollection,
                        IChatCompletionService chat)
     {
-        _kernel = kernel;
+        _kernel = kernel;        
         _retrievalServiceCollection = retrievalServiceCollection;
         _knowledgeBaseCollection = knowledgeBaseCollection;
 
@@ -61,6 +61,26 @@ public class ChatService : IChatService
             {                
                 var answers = await kb.Value.GetAnswerKB(question);
                 if (answers.Any() && !answers.First().Contains("NA"))
+                {
+                    string context = string.Join(Environment.NewLine, answers);
+                    var skPrompt = _systemPromptKB.Replace("{{$context}}", context);
+                    history.AddSystemMessage(skPrompt);
+                    history.AddUserMessage(question);
+
+                    var response = await _chat.GetChatMessageContentAsync(history, openAIPromptExecutionSettings, _kernel);
+
+                    history.AddAssistantMessage(response.Items[0].ToString());
+
+                    return response.Items[0].ToString();
+                }
+            }
+
+            // Now let's call other Retrieval Source and send it to OpenAI if result found
+            foreach (var retrieval in _retrievalServiceCollection.GetRetrivalService())
+            {
+                var answers = await retrieval.Value.GetAnswersAsync(question);
+
+                if (answers.Any())
                 {
                     string context = string.Join(Environment.NewLine, answers);
                     var skPrompt = _systemPromptKB.Replace("{{$context}}", context);

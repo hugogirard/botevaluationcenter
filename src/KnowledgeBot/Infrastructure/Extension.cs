@@ -48,6 +48,8 @@ public static class Extension
         var section = configuration.GetSection("KnowledgeBase");
         configuration.GetSection("KnowledgeBase").Bind(conf);
         KnowledgeBaseCollection knowledgeBaseCollection = new();
+
+        // Load all KB from the configuration and create instance of KnowledgeService
         foreach (var kb in conf.KnowledgeConfiguration)
         {
             var serviceProvider = services.BuildServiceProvider();
@@ -62,7 +64,7 @@ public static class Extension
             services.AddSingleton(knowledgeBaseCollection);
         }
 
-        // Now load all plugin that come from the baseclass PluginAdapter
+        // Now load all RAG implementation that come from the interface IRetrievalService
         var baseInterface = typeof(IRetrievalService);
         var interfaceTypes = Assembly.GetExecutingAssembly().GetTypes()
                              .Where(t => t.IsClass && !t.IsAbstract && baseInterface.IsAssignableFrom(t));
@@ -83,7 +85,7 @@ public static class Extension
         { 
             services.AddSingleton(retrievalCollection);
         }
-
+               
         services.AddSingleton<Kernel>();
     }
 }

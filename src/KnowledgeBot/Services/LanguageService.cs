@@ -14,11 +14,13 @@ public class LanguageService : ILanguageService
     QuestionAnsweringClient _client;
     QuestionAnsweringProject _project;
     private readonly ILogger<LanguageService> _logger;
+    private readonly double _confidenceThreshold;
     private Dictionary<string, QuestionAnsweringProject> _projects = new();
 
     public LanguageService(IConfiguration configuration, ILogger<LanguageService> logger)
     {
         Uri endpoint = new Uri(configuration["LANGUAGESRV:ENDPOINT"]);
+        _confidenceThreshold = double.Parse(configuration["LANGUAGESRV:ConfidenceThreshold"]);
         AzureKeyCredential credential = new AzureKeyCredential(configuration["LANGUAGESRV:KEY"]);        
         string deploymentName = "production";
 
@@ -37,7 +39,8 @@ public class LanguageService : ILanguageService
 
             foreach (KnowledgeBaseAnswer answer in response.Value.Answers)
             {
-                answers.Add(answer.Answer);
+                if (answer.Confidence >= _confidenceThreshold)
+                    answers.Add(answer.Answer);
             }
         }
         catch (Exception ex)
