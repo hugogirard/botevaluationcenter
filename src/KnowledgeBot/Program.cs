@@ -29,7 +29,7 @@ builder.Configuration.AddAzureAppConfiguration(options =>
 
 builder.Services.AddSingleton<BotFrameworkAuthentication, ConfigurationBotFrameworkAuthentication>();
 
-builder.Services.AddSingleton<IKnowledgeBaseService,KnowledgeBaseService>();
+builder.Services.AddSingleton<ILanguageService,LanguageService>();
 
 builder.Services.RegisterSemanticKernel(builder.Configuration);
 

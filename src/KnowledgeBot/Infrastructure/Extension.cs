@@ -1,13 +1,20 @@
-﻿using KnowledgeBot.Models;
+﻿using KnowledgeBot.KnowledgeBase;
+using KnowledgeBot.Models;
 using KnowledgeBot.Options;
-using KnowledgeBot.Plugins;
+
+using KnowledgeBot.RAG;
+using KnowledgeBot.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+using System;
 using System.Configuration;
+using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 
 namespace KnowledgeBot.Infrastructure;
@@ -17,6 +24,17 @@ public static class Extension
     /// <summary>
     /// This method register Semantic Kernel and all needed plugins
     /// </summary>    
+    /// 
+    public static object RegisterBasePlugin(Type pluginType, IServiceProvider sp) 
+    {
+        var constructor = pluginType.GetConstructors().First();
+        var parameters = constructor.GetParameters()
+                                    .Select(p => sp.GetService(p.ParameterType))
+                                    .ToArray();
+        var instance = Activator.CreateInstance(pluginType, parameters);
+        return instance;
+    }
+
     public static void RegisterSemanticKernel(this IServiceCollection services, IConfiguration configuration) 
     {
         services.AddSingleton<IChatCompletionService>(sp =>
@@ -29,48 +47,45 @@ public static class Extension
         KnowledgeBaseConfiguration conf = new();
         var section = configuration.GetSection("KnowledgeBase");
         configuration.GetSection("KnowledgeBase").Bind(conf);
+        KnowledgeBaseCollection knowledgeBaseCollection = new();
 
+        // Load all KB from the configuration and create instance of KnowledgeService
         foreach (var kb in conf.KnowledgeConfiguration)
         {
-            services.AddKeyedSingleton(kb.name, (sp, key) =>
-            {
-                var loggerFactory = sp.GetService<ILoggerFactory>();
-                var knowledgeBaseService = sp.GetService<IKnowledgeBaseService>();
-
-                return new KnowledgeBasePlugin(loggerFactory.CreateLogger<KnowledgeBasePlugin>(), knowledgeBaseService, kb.name);
-            });
+            var serviceProvider = services.BuildServiceProvider();
+            var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
+            var languageService = serviceProvider.GetService<ILanguageService>();
+            var instance = new KnowledgeService(loggerFactory.CreateLogger<KnowledgeService>(), languageService, kb.name);
+            knowledgeBaseCollection.AddKnowledgeBase(kb.name, instance);
         }
 
-        // Register the Kernel singletone
-        services.AddSingleton((sp) =>
+        if (knowledgeBaseCollection.Any())
         {
-            KernelPluginCollection plugins = [];
+            services.AddSingleton(knowledgeBaseCollection);
+        }
 
-            // Register all plugins of KB in the kernel
-            foreach (var kb in conf.KnowledgeConfiguration)
-            {
-                plugins.AddFromObject(sp.GetRequiredKeyedService<KnowledgeBasePlugin>(kb.name), kb.name);
-            }
+        // Now load all RAG implementation that come from the interface IRetrievalService
+        var baseInterface = typeof(IRetrievalService);
+        var interfaceTypes = Assembly.GetExecutingAssembly().GetTypes()
+                             .Where(t => t.IsClass && !t.IsAbstract && baseInterface.IsAssignableFrom(t));
 
-            //plugins.AddFromObject(sp.GetRequiredService<KnowledgeBasePlugin>());
-
-            return new Kernel(sp, plugins);
-        });
-
-
-
-        //var chatCompletion = new AzureOpenAIChatCompletionService(configuration["AzureOpenAI:ChatDeploymentName"],
-        //                                                          configuration["AzureOpenAI:Endpoint"],
-        //                                                          configuration["AzureOpenAI:ApiKey"]);
-
-        //services.AddSingleton<IChatCompletionService>(chatCompletion);
-
-        //var builder = Kernel.CreateBuilder();
-        ////builder.AddAzureOpenAIChatCompletion(configuration["AzureOpenAI:ChatDeploymentName"],
-        ////                                     configuration["AzureOpenAI:Endpoint"],
-        ////                                     configuration["AzureOpenAI:ApiKey"]);
-
-        //// Register the Kernel singletone
-        //services.AddSingleton(builder.Build());
+        var retrievalCollection = new RetrievalServiceCollection();
+        var sp = services.BuildServiceProvider();
+        foreach (var interfaceType in interfaceTypes)
+        {
+          
+            var constructor = interfaceType.GetConstructors().First();
+            var parameters = constructor.GetParameters()
+                                        .Select(p => sp.GetService(p.ParameterType))
+                                        .ToArray();
+            var instance = Activator.CreateInstance(interfaceType, parameters);
+            retrievalCollection.AddRetrivalService(interfaceType.Name, (IRetrievalService)instance);
+        }
+        if (retrievalCollection.Any()) 
+        { 
+            services.AddSingleton(retrievalCollection);
+        }
+               
+        services.AddSingleton<Kernel>();
     }
 }

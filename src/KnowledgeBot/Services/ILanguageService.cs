@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace KnowledgeBot.Services;
 
-public interface IKnowledgeBaseService
+public interface ILanguageService
 {
     Task<IEnumerable<string>> GetAnswersAsync(string question, string projectName);
 }
