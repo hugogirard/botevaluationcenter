@@ -100,10 +100,6 @@ namespace KnowledgeBot.RAG.Implementation
             {
                 var embeddingResponse = await response.Content.ReadFromJsonAsync<OpenAIEmbeddingResponse>();
                 return embeddingResponse.Data.First().Embedding.ToArray();
-               //var serializedObject = await response.Content.ReadAsStringAsync();
-               //var jsonDocument = JsonDocument.Parse(serializedObject);
-               //var embeddings = jsonDocument.RootElement.GetProperty("data").GetProperty("embeddings").Deserialize<float[]>();
-               //return embeddings;
             }
 
             return null;
