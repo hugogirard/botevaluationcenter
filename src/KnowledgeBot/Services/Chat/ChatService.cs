@@ -44,7 +44,7 @@ public class ChatService : IChatService
     }
 
 
-    public async Task<string> GetCompletionAsync(string question, ITurnContext<IMessageActivity> turnContext)
+    public async Task<string> GetCompletionAsync(string question)
     {
         var history = new ChatHistory();
 
@@ -75,31 +75,31 @@ public class ChatService : IChatService
                 }
             }
 
+            return string.Empty;
+
             // Now let's call other Retrieval Source and send it to OpenAI if result found
-            foreach (var retrieval in _retrievalServiceCollection.GetRetrivalService())
-            {
-                var answers = await retrieval.Value.GetAnswersAsync(question);
+            //foreach (var retrieval in _retrievalServiceCollection.GetRetrivalService())
+            //{
+            //    var answers = await retrieval.Value.GetAnswersAsync(question);
 
-                if (answers.Any())
-                {
-                    string context = string.Join(Environment.NewLine, answers);
-                    var skPrompt = _systemPromptKB.Replace("{{$context}}", context);
-                    history.AddSystemMessage(skPrompt);
-                    history.AddUserMessage(question);
+            //    if (answers.Any())
+            //    {
+            //        string context = string.Join(Environment.NewLine, answers);
+            //        var skPrompt = _systemPromptKB.Replace("{{$context}}", context);
+            //        history.AddSystemMessage(skPrompt);
+            //        history.AddUserMessage(question);
 
-                    var response = await _chat.GetChatMessageContentAsync(history, openAIPromptExecutionSettings, _kernel);
+            //        var response = await _chat.GetChatMessageContentAsync(history, openAIPromptExecutionSettings, _kernel);
 
-                    history.AddAssistantMessage(response.Items[0].ToString());
+            //        history.AddAssistantMessage(response.Items[0].ToString());
 
-                    return response.Items[0].ToString();
-                }
-            }
+            //        return response.Items[0].ToString();
+            //    }
+            //}
 
-            return "I don't know";
         }
         catch (Exception ex)
         {
-
             return "Oh no, our bot is out of office, an agent will comeback to you soon";
         }
     }

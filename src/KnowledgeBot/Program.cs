@@ -1,4 +1,6 @@
 ﻿using KnowledgeBot;
+using KnowledgeBot.Bots;
+using KnowledgeBot.Dialogs;
 using KnowledgeBot.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Bot.Builder;
@@ -38,7 +40,17 @@ builder.Services.AddSingleton<IBotFrameworkHttpAdapter, AdapterWithErrorHandler>
 
 builder.Services.AddSingleton<IChatService, ChatService>();
 
-builder.Services.AddTransient<IBot, KnowledgeBot.Bots.KnowledgeBot>();
+builder.Services.RegisterState();
+
+// Register all dialog
+builder.Services.AddSingleton<GreetingDialog>();
+builder.Services.AddSingleton<KnowledgeDialog>();
+
+builder.Services.AddSingleton<MainDialog>();
+
+builder.Services.AddTransient<IBot, KnowledgeBot<MainDialog>>();
+
+//builder.Services.AddTransient<IBot, KnowledgeBot.Bots.KnowledgeBot>();
 
 var app = builder.Build();
 

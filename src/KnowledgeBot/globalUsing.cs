@@ -6,3 +6,7 @@ global using System.Collections.Generic;
 global using System.ComponentModel;
 global using System.Threading.Tasks;
 global using KnowledgeBot.Services.Chat;
+global using KnowledgeBot.Models;
+global using Microsoft.Bot.Builder.Dialogs;
+global using KnowledgeBot.Services.Chat;
+global using KnowledgeBot.Services.State;
