@@ -9,4 +9,5 @@ public class ConversationData
     public  string KnowledgeBaseName { get; set; }
 
     public bool FoundInKnowledgeBase { get; set; }
+    public bool FoundInExtendedSource { get; internal set; }
 }

@@ -43,8 +43,7 @@ public class ChatService : IChatService
         _chat = chat;
     }
 
-
-    public async Task<string> GetCompletionAsync(string question)
+    public async Task<string> GetAnswerFromKnowledgeBaseAsync(string question)
     {
         var history = new ChatHistory();
 
@@ -77,30 +76,42 @@ public class ChatService : IChatService
 
             return string.Empty;
 
-            // Now let's call other Retrieval Source and send it to OpenAI if result found
-            //foreach (var retrieval in _retrievalServiceCollection.GetRetrivalService())
-            //{
-            //    var answers = await retrieval.Value.GetAnswersAsync(question);
-
-            //    if (answers.Any())
-            //    {
-            //        string context = string.Join(Environment.NewLine, answers);
-            //        var skPrompt = _systemPromptKB.Replace("{{$context}}", context);
-            //        history.AddSystemMessage(skPrompt);
-            //        history.AddUserMessage(question);
-
-            //        var response = await _chat.GetChatMessageContentAsync(history, openAIPromptExecutionSettings, _kernel);
-
-            //        history.AddAssistantMessage(response.Items[0].ToString());
-
-            //        return response.Items[0].ToString();
-            //    }
-            //}
-
         }
         catch (Exception ex)
         {
             return "Oh no, our bot is out of office, an agent will comeback to you soon";
         }
+    }
+
+    public async Task<string> GetAnswerFromExtendedSourceAsync(string question)
+    {
+        OpenAIPromptExecutionSettings openAIPromptExecutionSettings = new()
+        {
+            MaxTokens = 2000,
+            Temperature = 0.7,
+        };
+
+        var history = new ChatHistory();
+
+        foreach (var retrieval in _retrievalServiceCollection.GetRetrivalService())
+        {
+            var answers = await retrieval.Value.GetAnswersAsync(question);
+
+            if (answers.Any())
+            {
+                string context = string.Join(Environment.NewLine, answers);
+                var skPrompt = _systemPromptKB.Replace("{{$context}}", context);
+                history.AddSystemMessage(skPrompt);
+                history.AddUserMessage(question);
+
+                var response = await _chat.GetChatMessageContentAsync(history, openAIPromptExecutionSettings, _kernel);
+
+                history.AddAssistantMessage(response.Items[0].ToString());
+
+                return response.Items[0].ToString();
+            }
+        }
+
+        return string.Empty;
     }
 }

@@ -38,7 +38,7 @@ public class KnowledgeDialog : ComponentDialog
     {
         var data = await _stateService.ConversationDataAccessor.GetAsync(stepContext.Context, () => new ConversationData());
 
-        var chatAnswer = await _chatService.GetCompletionAsync(data.Question);
+        var chatAnswer = await _chatService.GetAnswerFromKnowledgeBaseAsync(data.Question);
 
         if (!string.IsNullOrEmpty(chatAnswer))
         {

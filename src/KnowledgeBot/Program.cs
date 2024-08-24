@@ -45,6 +45,7 @@ builder.Services.RegisterState();
 // Register all dialog
 builder.Services.AddSingleton<GreetingDialog>();
 builder.Services.AddSingleton<KnowledgeDialog>();
+builder.Services.AddSingleton<ExtendedSearchDialog>();
 
 builder.Services.AddSingleton<MainDialog>();
 

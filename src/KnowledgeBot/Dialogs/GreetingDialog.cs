@@ -59,6 +59,7 @@ namespace KnowledgeBot.Dialogs
             }
 
             await stepContext.Context.SendActivityAsync(MessageFactory.Text("Searching for an answer in our internal knowledge databases"), cancellationToken);
+            await stepContext.Context.SendActivityAsync(MessageFactory.Text("This can take some times..."), cancellationToken);
             return await stepContext.EndDialogAsync(null, cancellationToken);
         }
     }

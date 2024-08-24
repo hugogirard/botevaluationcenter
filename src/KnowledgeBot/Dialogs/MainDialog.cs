@@ -10,24 +10,16 @@ public class MainDialog : ComponentDialog
 {
     private readonly ILogger<MainDialog> _logger;
     private readonly IStateService _stateService;
-    private readonly GreetingDialog _greetingDialog;
-    private readonly KnowledgeDialog _knowledgeDialog;
 
     public MainDialog(ILogger<MainDialog> logger, 
                       GreetingDialog greetingDialog,
                       KnowledgeDialog knowledgeDialog,
+                      ExtendedSearchDialog extendedSearchDialog,
                       IStateService stateService) : base(nameof(MainDialog))
     {
         _logger = logger;        
         _stateService = stateService;
-        _greetingDialog = greetingDialog;
-        _knowledgeDialog = knowledgeDialog;
 
-        InitializeWaterfallDialog();
-    }
-
-    private void InitializeWaterfallDialog() 
-    {
         var waterfallSteps = new WaterfallStep[]
         {
             InitialStepAsync,
@@ -37,8 +29,9 @@ public class MainDialog : ComponentDialog
         };
 
         AddDialog(new TextPrompt(nameof(TextPrompt)));
-        AddDialog(_greetingDialog);
-        AddDialog(_knowledgeDialog);
+        AddDialog(greetingDialog);
+        AddDialog(knowledgeDialog);
+        AddDialog(extendedSearchDialog);
         AddDialog(new WaterfallDialog($"{nameof(MainDialog)}.mainFlow", waterfallSteps));
 
         InitialDialogId = $"{nameof(MainDialog)}.mainFlow";
@@ -61,11 +54,15 @@ public class MainDialog : ComponentDialog
         if (data.FoundInKnowledgeBase)
         {
             var promptMessage = MessageFactory.Text(data.Answer);
-            return await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
+            await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
+            return await stepContext.NextAsync(null, cancellationToken);
         }
         else
         {
-            return await stepContext.EndDialogAsync(null, cancellationToken);
+            var promptMessage = MessageFactory.Text("Cannot find answer in our knowledge base, searching in extended source...");
+            await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
+            
+            return await stepContext.BeginDialogAsync(nameof(ExtendedSearchDialog), null, cancellationToken);
         }
     }
 
