@@ -1,4 +1,6 @@
-﻿using Microsoft.Bot.Builder.Dialogs;
+﻿using Microsoft.Bot.Builder;
+using Microsoft.Bot.Builder.Dialogs;
+using Microsoft.Bot.Schema;
 using System.Text.RegularExpressions;
 using System.Threading;
 
@@ -34,6 +36,7 @@ public class MainDialog : ComponentDialog
             FinalStepAsync
         };
 
+        AddDialog(new TextPrompt(nameof(TextPrompt)));
         AddDialog(_greetingDialog);
         AddDialog(_knowledgeDialog);
         AddDialog(new WaterfallDialog($"{nameof(MainDialog)}.mainFlow", waterfallSteps));
@@ -48,14 +51,22 @@ public class MainDialog : ComponentDialog
 
     private async Task<DialogTurnResult> FindAnswerKnowledgeBase(WaterfallStepContext stepContext, CancellationToken cancellationToken) 
     {
-
-
-        return await stepContext.EndDialogAsync(null, cancellationToken);
+        return await stepContext.BeginDialogAsync(nameof(KnowledgeDialog), null, cancellationToken);        
     }
 
     private async Task<DialogTurnResult> EvaluateAnswerKnowledgeBase(WaterfallStepContext stepContext, CancellationToken cancellationToken) 
     {
-        return await stepContext.EndDialogAsync(null, cancellationToken);
+        var data = await _stateService.ConversationDataAccessor.GetAsync(stepContext.Context);
+
+        if (data.FoundInKnowledgeBase)
+        {
+            var promptMessage = MessageFactory.Text(data.Answer);
+            return await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
+        }
+        else
+        {
+            return await stepContext.EndDialogAsync(null, cancellationToken);
+        }
     }
 
     private async Task<DialogTurnResult> FinalStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)

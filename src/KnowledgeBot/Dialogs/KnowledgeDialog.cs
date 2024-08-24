@@ -24,7 +24,7 @@ public class KnowledgeDialog : ComponentDialog
     {
         var waterfallStreps = new WaterfallStep[]
         {
-                InitialStepAsync,
+                SearchInKnowledgeBase,
                 FinalStepAsync
         };
 
@@ -34,7 +34,7 @@ public class KnowledgeDialog : ComponentDialog
         InitialDialogId = $"{nameof(KnowledgeDialog)}.mainFlow";
     }
 
-    private async Task<DialogTurnResult> InitialStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+    private async Task<DialogTurnResult> SearchInKnowledgeBase(WaterfallStepContext stepContext, CancellationToken cancellationToken)
     {
         var data = await _stateService.ConversationDataAccessor.GetAsync(stepContext.Context, () => new ConversationData());
 
