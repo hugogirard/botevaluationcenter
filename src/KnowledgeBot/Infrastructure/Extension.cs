@@ -22,20 +22,6 @@ namespace KnowledgeBot.Infrastructure;
 
 public static class Extension
 {
-    /// <summary>
-    /// This method register Semantic Kernel and all needed plugins
-    /// </summary>    
-    /// 
-    //public static object RegisterBasePlugin(Type pluginType, IServiceProvider sp) 
-    //{
-    //    var constructor = pluginType.GetConstructors().First();
-    //    var parameters = constructor.GetParameters()
-    //                                .Select(p => sp.GetService(p.ParameterType))
-    //                                .ToArray();
-    //    var instance = Activator.CreateInstance(pluginType, parameters);
-    //    return instance;
-    //}
-
     public static void RegisterState(this IServiceCollection services) 
     {
 #if DEBUG

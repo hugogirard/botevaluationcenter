@@ -21,6 +21,7 @@ public class ChatService : IChatService
     private readonly RetrievalServiceCollection _retrievalServiceCollection;
     private readonly KnowledgeBaseCollection _knowledgeBaseCollection;
     private readonly string _systemPromptKB;
+    private readonly string _systemPromptRetrieval;
     private readonly IChatCompletionService _chat;
     private readonly string _systemPromptPlugin;
 
@@ -39,6 +40,11 @@ public class ChatService : IChatService
                              Just here the context provided to answer but make the sentence better. Don't add any more information. 
                              context: {{$context}}";
 
+        _systemPromptRetrieval = @"You are an intelligent assistant helping employees with their questions.
+                                   Use 'you' to refer to the individual asking the questions even if they ask with 'I'.
+                                   Answer the following question using only the data provided in the context below don't add anything outside it.
+                                   If you cannot answer using the sources below, say you don't know. Use below example to answer
+                                   {{$context}}";
         _kernel = kernel;
         _chat = chat;
     }
@@ -100,10 +106,11 @@ public class ChatService : IChatService
             if (answers.Any())
             {
                 string context = string.Join(Environment.NewLine, answers);
-                var skPrompt = _systemPromptKB.Replace("{{$context}}", context);
-                history.AddSystemMessage(skPrompt);
-                history.AddUserMessage(question);
+                var skPrompt = _systemPromptRetrieval.Replace("{{$context}}", context);
 
+                history.AddSystemMessage(context);
+                history.AddUserMessage(question);
+                
                 var response = await _chat.GetChatMessageContentAsync(history, openAIPromptExecutionSettings, _kernel);
 
                 history.AddAssistantMessage(response.Items[0].ToString());
