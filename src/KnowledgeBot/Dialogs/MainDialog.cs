@@ -1,5 +1,6 @@
 ﻿using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
+using Microsoft.Bot.Builder.Dialogs.Choices;
 using Microsoft.Bot.Schema;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -27,6 +28,8 @@ public class MainDialog : ComponentDialog
             FindAnswerKnowledgeBase,
             EvaluateAnswerKnowledgeBase,
             EvaluateAnswerRetrieval,
+            EvaluateAnswer,
+            AcknowledgeQuestionAnswered,
             FinalStepAsync
         };
 
@@ -61,7 +64,7 @@ public class MainDialog : ComponentDialog
             await _stateService.SaveMessageAsync(message);
 
             await stepContext.Context.SendActivityAsync(promptMessage, cancellationToken);
-            return await stepContext.EndDialogAsync(null, cancellationToken);            
+            return await stepContext.NextAsync(null, cancellationToken);            
         }
         else
         {            
@@ -77,7 +80,7 @@ public class MainDialog : ComponentDialog
         var message = await _stateService.MessageAccessor.GetAsync(stepContext.Context);
 
         if (message.FoundInKnowledgeDatabase)
-            return await stepContext.EndDialogAsync(null, cancellationToken);
+            return await stepContext.NextAsync(null, cancellationToken);
 
         Activity promptMessage;
 
@@ -89,7 +92,7 @@ public class MainDialog : ComponentDialog
             await _stateService.SaveMessageAsync(message);
 
             await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
-            return await stepContext.EndDialogAsync(null, cancellationToken);
+            return await stepContext.NextAsync(null, cancellationToken);
         }
 
         promptMessage = MessageFactory.Text("Cannot found the answer from your question, an agent will comeback to you soon",
@@ -98,6 +101,37 @@ public class MainDialog : ComponentDialog
 
         message.QuestionNotAnswered = true;
         await _stateService.SaveMessageAsync(message);
+
+        return await stepContext.EndDialogAsync(null, cancellationToken);
+    }
+
+    private async Task<DialogTurnResult> EvaluateAnswer(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+    {
+        var message = await _stateService.MessageAccessor.GetAsync(stepContext.Context);
+
+        if (message.FoundInKnowledgeDatabase || message.FoundInRetrieval) 
+        {
+            var promptMessage = MessageFactory.Text("Did the answer provided answered your question?");
+            var choices = new List<Choice>()
+            {
+                new Choice("Yes"),
+                new Choice("No")
+            };
+            return await stepContext.PromptAsync(nameof(TextPrompt),
+                                                 new PromptOptions { Prompt = promptMessage, Choices = choices  }, cancellationToken);
+        }
+            
+        return await stepContext.EndDialogAsync(null, cancellationToken);
+    }
+    
+    private async Task<DialogTurnResult> AcknowledgeQuestionAnswered(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+    {
+        var choice = (Choice)stepContext.Result;
+
+        if (choice.Value.ToLowerInvariant() == "no") 
+        { 
+            // Do something
+        }
 
         return await stepContext.EndDialogAsync(null, cancellationToken);
     }
