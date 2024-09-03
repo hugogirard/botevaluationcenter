@@ -46,7 +46,7 @@ public class KnowledgeDialog : ComponentDialog
             message.FoundInKnowledgeDatabase = !kbResponse.Error; // Indicate if we have an error
             message.KnowledgeBaseName = kbResponse.Error ? string.Empty : kbResponse.KbName;
             
-            await _stateService.MessageAccessor.SetAsync(stepContext.Context, message);
+            await _stateService.MessageAccessor.SetAsync(stepContext.Context, message);            
             return await stepContext.NextAsync(null, cancellationToken);            
         }
         else 

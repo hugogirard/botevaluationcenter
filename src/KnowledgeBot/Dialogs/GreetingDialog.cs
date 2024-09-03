@@ -74,8 +74,8 @@ namespace KnowledgeBot.Dialogs
                 await _stateService.SaveSessionAsync(session);
                 await _stateService.SaveMessageAsync(message);
 
-                var promptMessage = MessageFactory.Text("Searching for an answer in our internal knowledge databases"); 
-                await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
+                var promptMessage = MessageFactory.Text("Searching for an answer in our internal knowledge databases", inputHint: InputHints.IgnoringInput); 
+                await stepContext.Context.SendActivityAsync(promptMessage, cancellationToken);
                 return await stepContext.EndDialogAsync(null, cancellationToken);                
             }
 

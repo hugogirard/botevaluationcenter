@@ -55,18 +55,19 @@ public class MainDialog : ComponentDialog
 
         if (message.FoundInKnowledgeDatabase)
         {
-            var promptMessage = MessageFactory.Text(message.Completion);
+            var promptMessage = MessageFactory.Text(message.Completion, inputHint: InputHints.IgnoringInput);
 
             // Update the message in the database
             await _stateService.SaveMessageAsync(message);
 
-            await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
+            await stepContext.Context.SendActivityAsync(promptMessage, cancellationToken);
             return await stepContext.EndDialogAsync(null, cancellationToken);            
         }
         else
         {            
-            var promptMessage = MessageFactory.Text("Cannot find answer in our knowledge base, searching in extended source...");
-            await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
+            var promptMessage = MessageFactory.Text("Cannot find answer in our knowledge base, searching in extended source...",
+                                                    inputHint: InputHints.IgnoringInput);
+            await stepContext.Context.SendActivityAsync(promptMessage, cancellationToken);
             return await stepContext.BeginDialogAsync(nameof(ExtendedSearchDialog), null, cancellationToken);
         }
     }
@@ -74,6 +75,10 @@ public class MainDialog : ComponentDialog
     private async Task<DialogTurnResult> EvaluateAnswerRetrieval(WaterfallStepContext stepContext, CancellationToken cancellationToken) 
     {
         var message = await _stateService.MessageAccessor.GetAsync(stepContext.Context);
+
+        if (message.FoundInKnowledgeDatabase)
+            return await stepContext.EndDialogAsync(null, cancellationToken);
+
         Activity promptMessage;
 
         if (message.FoundInRetrieval) 
@@ -87,8 +92,9 @@ public class MainDialog : ComponentDialog
             return await stepContext.EndDialogAsync(null, cancellationToken);
         }
 
-        promptMessage = MessageFactory.Text("Cannot found the answer from your question, an agent will comeback to you soon");
-        await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
+        promptMessage = MessageFactory.Text("Cannot found the answer from your question, an agent will comeback to you soon",
+                                            inputHint: InputHints.IgnoringInput);
+        await stepContext.Context.SendActivityAsync(promptMessage, cancellationToken);
 
         message.QuestionNotAnswered = true;
         await _stateService.SaveMessageAsync(message);
