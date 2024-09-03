@@ -36,24 +36,23 @@ public class KnowledgeDialog : ComponentDialog
 
     private async Task<DialogTurnResult> SearchInKnowledgeBase(WaterfallStepContext stepContext, CancellationToken cancellationToken)
     {
-        var data = await _stateService.ConversationDataAccessor.GetAsync(stepContext.Context, () => new ConversationData());
+        var message = await _stateService.MessageAccessor.GetAsync(stepContext.Context);
 
-        var chatAnswer = await _chatService.GetAnswerFromKnowledgeBaseAsync(data.Question);
+        var kbResponse = await _chatService.GetAnswerFromKnowledgeBaseAsync(message.Prompt);
 
-        if (!string.IsNullOrEmpty(chatAnswer))
-        {
-            //var promptMessage = MessageFactory.Text(chatAnswer);
-            data.Answer = chatAnswer;
-            data.FoundInKnowledgeBase = true;
-
-            await _stateService.ConversationDataAccessor.SetAsync(stepContext.Context, data);
-            return await stepContext.NextAsync(null, cancellationToken);
-            //return await stepContext.PromptAsync($"{nameof(KnowledgeDialog)}.message", new PromptOptions { Prompt = promptMessage }, cancellationToken);
+        if (!string.IsNullOrEmpty(kbResponse.Answer))
+        {            
+            message.Completion = kbResponse.Answer;
+            message.FoundInKnowledgeDatabase = !kbResponse.Error; // Indicate if we have an error
+            message.KnowledgeBaseName = kbResponse.Error ? string.Empty : kbResponse.KbName;
+            
+            await _stateService.MessageAccessor.SetAsync(stepContext.Context, message);
+            return await stepContext.NextAsync(null, cancellationToken);            
         }
         else 
         {
-            data.FoundInKnowledgeBase = false;
-            await _stateService.ConversationDataAccessor.SetAsync(stepContext.Context, data);
+            message.FoundInKnowledgeDatabase = false;
+            await _stateService.MessageAccessor.SetAsync(stepContext.Context, message);
             return await stepContext.NextAsync(null, cancellationToken);
         }
     }

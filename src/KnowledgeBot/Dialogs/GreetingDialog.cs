@@ -9,11 +9,15 @@ namespace KnowledgeBot.Dialogs
     {
         private readonly ILogger<GreetingDialog> _logger;
         private readonly IStateService _stateService;
+        private readonly ICosmosDbRepository _cosmosDbRepository;
 
-        public GreetingDialog(ILogger<GreetingDialog> logger, IStateService stateService) : base(nameof(GreetingDialog))
+        public GreetingDialog(ILogger<GreetingDialog> logger,
+                              ICosmosDbRepository cosmosDbRepository,
+                              IStateService stateService) : base(nameof(GreetingDialog))
         {
             _logger = logger;
             _stateService = stateService;
+            _cosmosDbRepository = cosmosDbRepository;
 
             InitializeWaterfallDialog();
         }
@@ -35,9 +39,9 @@ namespace KnowledgeBot.Dialogs
 
         private async Task<DialogTurnResult> InitialStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {            
-            var data = await _stateService.ConversationDataAccessor.GetAsync(stepContext.Context, () => new ConversationData());
+            var message = await _stateService.MessageAccessor.GetAsync(stepContext.Context, () => new Message());
 
-            if (string.IsNullOrEmpty(data.Question))
+            if (string.IsNullOrEmpty(message.Prompt))
             {
                 string msg = "Hi, I am a knowledge bot assistant, please ask me a question";
                 var promptMessage = MessageFactory.Text(msg,msg,InputHints.ExpectingInput);
@@ -51,17 +55,26 @@ namespace KnowledgeBot.Dialogs
 
         private async Task<DialogTurnResult> AckknowledgeMessageAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken) 
         {
-            var data = await _stateService.ConversationDataAccessor.GetAsync(stepContext.Context, () => new ConversationData());
+            var session = await _stateService.SessionAccessor.GetAsync(stepContext.Context);
 
-            if (string.IsNullOrEmpty(data.Question))
+            var message = await _stateService.MessageAccessor.GetAsync(stepContext.Context, () => new Message 
             {
-                data.Question = (string)stepContext.Result;
+                MemberId = session.MemberId,
+                SessionId = session.SessionId
+            });
 
-                await _stateService.ConversationDataAccessor.SetAsync(stepContext.Context, data);
+            if (string.IsNullOrEmpty(message.Prompt))
+            {
+                message.Prompt = (string)stepContext.Result;
 
-                var promptMessage = MessageFactory.Text("Searching for an answer in our internal knowledge databases");
-                //await stepContext.PromptAsync($"{nameof(GreetingDialog)}.question", new PromptOptions { Prompt = promptMessage }, cancellationToken);
-                //promptMessage = MessageFactory.Text("This can take some times...");
+                await _stateService.MessageAccessor.SetAsync(stepContext.Context, message);
+
+                // Since a question was asked we can save the Session in CosmosDB and the
+                // and a message object too
+                await _stateService.SaveSessionAsync(session);
+                await _stateService.SaveMessageAsync(message);
+
+                var promptMessage = MessageFactory.Text("Searching for an answer in our internal knowledge databases"); 
                 await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
                 return await stepContext.EndDialogAsync(null, cancellationToken);                
             }

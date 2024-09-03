@@ -49,7 +49,7 @@ public class ChatService : IChatService
         _chat = chat;
     }
 
-    public async Task<string> GetAnswerFromKnowledgeBaseAsync(string question)
+    public async Task<KnowledgeBaseResponse> GetAnswerFromKnowledgeBaseAsync(string question)
     {
         var history = new ChatHistory();
 
@@ -75,17 +75,18 @@ public class ChatService : IChatService
                     var response = await _chat.GetChatMessageContentAsync(history, openAIPromptExecutionSettings, _kernel);
 
                     history.AddAssistantMessage(response.Items[0].ToString());
-
-                    return response.Items[0].ToString();
+                    return new KnowledgeBaseResponse(kb.Key, response.Items[0].ToString());                    
                 }
             }
 
-            return string.Empty;
+            return new KnowledgeBaseResponse(string.Empty,string.Empty);
 
         }
         catch (Exception ex)
         {
-            return "Oh no, our bot is out of office, an agent will comeback to you soon";
+            return new KnowledgeBaseResponse(string.Empty, 
+                                             "Oh no, our bot is out of office, an agent will comeback to you soon", 
+                                             true);            
         }
     }
 

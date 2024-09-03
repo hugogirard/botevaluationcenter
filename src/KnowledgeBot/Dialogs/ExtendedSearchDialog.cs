@@ -29,25 +29,24 @@ public class ExtendedSearchDialog : ComponentDialog
                 FinalStepAsync
         };
 
-        AddDialog(new TextPrompt($"{nameof(ExtendedSearchDialog)}.message"));
-        AddDialog(new WaterfallDialog($"{nameof(ExtendedSearchDialog)}.mainFlow", waterfallStreps));
+        AddDialog(new WaterfallDialog(nameof(ExtendedSearchDialog), waterfallStreps));
 
         InitialDialogId = $"{nameof(ExtendedSearchDialog)}.mainFlow";
     }
 
     private async Task<DialogTurnResult> SearchExtendedSource(WaterfallStepContext stepContext, CancellationToken cancellationToken)
     {
-        var data = await _stateService.ConversationDataAccessor.GetAsync(stepContext.Context);
+        var message = await _stateService.MessageAccessor.GetAsync(stepContext.Context);
 
-        var answer = await _chatService.GetAnswerFromExtendedSourceAsync(data.Question);
+        var answer = await _chatService.GetAnswerFromExtendedSourceAsync(message.Prompt);
 
         if (!string.IsNullOrEmpty(answer))
         {
-            data.Answer = answer;
-            data.FoundInExtendedSource = true;
+            message.Completion = answer;
+            message.FoundInRetrieval = true;
 
-            await _stateService.ConversationDataAccessor.SetAsync(stepContext.Context, data);
-            return await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = MessageFactory.Text(answer) }, cancellationToken);
+            await _stateService.MessageAccessor.SetAsync(stepContext.Context, message);
+            return await stepContext.EndDialogAsync(null, cancellationToken);
         }
 
         return await stepContext.EndDialogAsync(null, cancellationToken);

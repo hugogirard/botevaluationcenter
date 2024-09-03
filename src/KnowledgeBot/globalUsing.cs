@@ -8,5 +8,5 @@ global using System.Threading.Tasks;
 global using KnowledgeBot.Services.Chat;
 global using KnowledgeBot.Models;
 global using Microsoft.Bot.Builder.Dialogs;
-global using KnowledgeBot.Services.Chat;
 global using KnowledgeBot.Services.State;
+global using KnowledgeBot.Repository;

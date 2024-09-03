@@ -26,12 +26,13 @@ builder.Configuration.AddAzureAppConfiguration(options =>
     options.Connect(builder.Configuration["AppConfig"])
            .Select("KnowledgeBase")
            .ConfigureRefresh(refreshOptions =>
-                   refreshOptions.Register("KnowledgeBase", refreshAll: true)); ;           
+                   refreshOptions.Register("KnowledgeBase", refreshAll: true));         
 });
 
 builder.Services.AddSingleton<BotFrameworkAuthentication, ConfigurationBotFrameworkAuthentication>();
 
 builder.Services.AddSingleton<ILanguageService,LanguageService>();
+builder.Services.AddSingleton<ICosmosDbRepository, CosmosDbRepository>();
 
 builder.Services.RegisterSemanticKernel(builder.Configuration);
 
@@ -50,8 +51,6 @@ builder.Services.AddSingleton<ExtendedSearchDialog>();
 builder.Services.AddSingleton<MainDialog>();
 
 builder.Services.AddTransient<IBot, KnowledgeBot<MainDialog>>();
-
-//builder.Services.AddTransient<IBot, KnowledgeBot.Bots.KnowledgeBot>();
 
 var app = builder.Build();
 

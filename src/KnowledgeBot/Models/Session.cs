@@ -1,10 +1,8 @@
 ﻿namespace KnowledgeBot.Models
 {
-    public class Session
+    public class Session : BaseEntity
     {
-        public string Id { get; set; }
-
-        public string Type { get; set; }
+        public string Type { get; } = "Session";
 
         public string SessionId { get; set; }
         

@@ -15,6 +15,7 @@ public class MainDialog : ComponentDialog
                       GreetingDialog greetingDialog,
                       KnowledgeDialog knowledgeDialog,
                       ExtendedSearchDialog extendedSearchDialog,
+                      ICosmosDbRepository cosmosDbRepository,
                       IStateService stateService) : base(nameof(MainDialog))
     {
         _logger = logger;        
@@ -25,6 +26,7 @@ public class MainDialog : ComponentDialog
             InitialStepAsync,
             FindAnswerKnowledgeBase,
             EvaluateAnswerKnowledgeBase,
+            EvaluateAnswerRetrieval,
             FinalStepAsync
         };
 
@@ -49,11 +51,15 @@ public class MainDialog : ComponentDialog
 
     private async Task<DialogTurnResult> EvaluateAnswerKnowledgeBase(WaterfallStepContext stepContext, CancellationToken cancellationToken) 
     {
-        var data = await _stateService.ConversationDataAccessor.GetAsync(stepContext.Context);
+        var message = await _stateService.MessageAccessor.GetAsync(stepContext.Context);
 
-        if (data.FoundInKnowledgeBase)
+        if (message.FoundInKnowledgeDatabase)
         {
-            var promptMessage = MessageFactory.Text(data.Answer);
+            var promptMessage = MessageFactory.Text(message.Completion);
+
+            // Update the message in the database
+            await _stateService.SaveMessageAsync(message);
+
             await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
             return await stepContext.EndDialogAsync(null, cancellationToken);            
         }
@@ -63,6 +69,31 @@ public class MainDialog : ComponentDialog
             await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
             return await stepContext.BeginDialogAsync(nameof(ExtendedSearchDialog), null, cancellationToken);
         }
+    }
+
+    private async Task<DialogTurnResult> EvaluateAnswerRetrieval(WaterfallStepContext stepContext, CancellationToken cancellationToken) 
+    {
+        var message = await _stateService.MessageAccessor.GetAsync(stepContext.Context);
+        Activity promptMessage;
+
+        if (message.FoundInRetrieval) 
+        {
+            promptMessage = MessageFactory.Text(message.Completion);
+            
+            // Update the message in the database
+            await _stateService.SaveMessageAsync(message);
+
+            await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
+            return await stepContext.EndDialogAsync(null, cancellationToken);
+        }
+
+        promptMessage = MessageFactory.Text("Cannot found the answer from your question, an agent will comeback to you soon");
+        await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
+
+        message.QuestionNotAnswered = true;
+        await _stateService.SaveMessageAsync(message);
+
+        return await stepContext.EndDialogAsync(null, cancellationToken);
     }
 
     private async Task<DialogTurnResult> FinalStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)

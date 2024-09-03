@@ -11,16 +11,24 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Microsoft.SemanticKernel;
+using Microsoft.Extensions.Configuration;
 
 namespace KnowledgeBot.Bots
 {
     public class KnowledgeBot<T> : DialogBot<T> where T: Dialog
     {
         private readonly IStateService _stateService;
+        private readonly string _defaultUsername;
+        private readonly string _defaultMemberAadObjectId;
 
-        public KnowledgeBot(IStateService stateService, T dialog, ILogger<DialogBot<T>> logger) : base(stateService, dialog, logger)
+        public KnowledgeBot(IConfiguration configuration,
+                            IStateService stateService, 
+                            T dialog, 
+                            ILogger<DialogBot<T>> logger) : base(stateService, dialog, logger)
         {
             _stateService = stateService;
+            _defaultUsername = configuration["DefaultUsername"] ?? "TestUser";
+            _defaultMemberAadObjectId = configuration["DefaultMemberAadObjectId"];
         }
 
         protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
@@ -33,11 +41,20 @@ namespace KnowledgeBot.Bots
                     var session = new Session();
                     session.SessionId = turnContext.Activity.Conversation.Id;
 
+#if DEBUG
+                    session.MemberId = _defaultMemberAadObjectId ??
+                                       member.Id;
+#else
                     // Set the member id to the recipient id
                     session.MemberId = member.AadObjectId  ??
-                                       member.Id;  
+                                       member.Id;
+#endif
 
+#if DEBUG
+                    session.Name = _defaultUsername;
+#else
                     session.Name = member.Name ?? "N/A";
+#endif
 
                     await _stateService.SessionAccessor.SetAsync(turnContext, session, cancellationToken);
 
