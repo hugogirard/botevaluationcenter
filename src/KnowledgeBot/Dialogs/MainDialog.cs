@@ -55,13 +55,12 @@ public class MainDialog : ComponentDialog
         {
             var promptMessage = MessageFactory.Text(data.Answer);
             await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
-            return await stepContext.NextAsync(null, cancellationToken);
+            return await stepContext.EndDialogAsync(null, cancellationToken);            
         }
         else
-        {
+        {            
             var promptMessage = MessageFactory.Text("Cannot find answer in our knowledge base, searching in extended source...");
             await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
-            
             return await stepContext.BeginDialogAsync(nameof(ExtendedSearchDialog), null, cancellationToken);
         }
     }

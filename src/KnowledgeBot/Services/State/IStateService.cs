@@ -8,7 +8,9 @@ namespace KnowledgeBot.Services.State
         IStatePropertyAccessor<ConversationData> ConversationDataAccessor { get; set; }
         
         IStatePropertyAccessor<DialogState> DialogStateAccessor { get; set; }
-        
+
+        IStatePropertyAccessor<Session> SessionAccessor { get; set; }
+
         ConversationState ConversationState { get; }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Microsoft.Bot.Builder;
+﻿using Microsoft.Bot.Builder;    
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
 using System.Threading;
@@ -23,23 +23,25 @@ namespace KnowledgeBot.Dialogs
             var waterfallStreps = new WaterfallStep[]
             {
                 InitialStepAsync,
+                AckknowledgeMessageAsync,
                 FinalStepAsync
             };
-            
-            AddDialog(new TextPrompt($"{nameof(GreetingDialog)}.question"));
-            AddDialog(new WaterfallDialog($"{nameof(GreetingDialog)}.mainFlow", waterfallStreps));
 
-            InitialDialogId = $"{nameof(GreetingDialog)}.mainFlow";
+            AddDialog(new TextPrompt(nameof(TextPrompt)));
+            AddDialog(new WaterfallDialog(nameof(GreetingDialog), waterfallStreps));
+
+            InitialDialogId = nameof(GreetingDialog);
         }
 
         private async Task<DialogTurnResult> InitialStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
+        {            
             var data = await _stateService.ConversationDataAccessor.GetAsync(stepContext.Context, () => new ConversationData());
 
             if (string.IsNullOrEmpty(data.Question))
             {
-                var promptMessage = MessageFactory.Text("Hi, I am a knowledge bot assistant, please ask me a question");
-                return await stepContext.PromptAsync($"{nameof(GreetingDialog)}.question", new PromptOptions { Prompt = promptMessage }, cancellationToken);
+                string msg = "Hi, I am a knowledge bot assistant, please ask me a question";
+                var promptMessage = MessageFactory.Text(msg,msg,InputHints.ExpectingInput);
+                return await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
             }
             else 
             {
@@ -47,19 +49,28 @@ namespace KnowledgeBot.Dialogs
             }
         }
 
-        private async Task<DialogTurnResult> FinalStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        private async Task<DialogTurnResult> AckknowledgeMessageAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken) 
         {
             var data = await _stateService.ConversationDataAccessor.GetAsync(stepContext.Context, () => new ConversationData());
 
-            if (string.IsNullOrEmpty(data.Question)) 
+            if (string.IsNullOrEmpty(data.Question))
             {
                 data.Question = (string)stepContext.Result;
 
                 await _stateService.ConversationDataAccessor.SetAsync(stepContext.Context, data);
+
+                var promptMessage = MessageFactory.Text("Searching for an answer in our internal knowledge databases");
+                //await stepContext.PromptAsync($"{nameof(GreetingDialog)}.question", new PromptOptions { Prompt = promptMessage }, cancellationToken);
+                //promptMessage = MessageFactory.Text("This can take some times...");
+                await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
+                return await stepContext.EndDialogAsync(null, cancellationToken);                
             }
 
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text("Searching for an answer in our internal knowledge databases"), cancellationToken);
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text("This can take some times..."), cancellationToken);
+            return await stepContext.NextAsync(null, cancellationToken);
+        }
+
+        private async Task<DialogTurnResult> FinalStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        {
             return await stepContext.EndDialogAsync(null, cancellationToken);
         }
     }

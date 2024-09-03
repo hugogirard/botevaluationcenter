@@ -6,10 +6,13 @@
 
         public string Type { get; set; }
 
+        public string SessionId { get; set; }
+        
         /// <summary>
         /// Partion Key in CosmosDB
         /// </summary>
-        public string SessionId { get; set; }
-        
+        public string MemberId { get; set; }
+
+        public string Name { get; set; }
     }
 }

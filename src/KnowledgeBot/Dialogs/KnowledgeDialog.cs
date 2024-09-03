@@ -28,10 +28,10 @@ public class KnowledgeDialog : ComponentDialog
                 FinalStepAsync
         };
 
-        AddDialog(new TextPrompt($"{nameof(KnowledgeDialog)}.message"));
-        AddDialog(new WaterfallDialog($"{nameof(KnowledgeDialog)}.mainFlow", waterfallStreps));
+        AddDialog(new TextPrompt(nameof(TextPrompt)));
+        AddDialog(new WaterfallDialog(nameof(KnowledgeDialog), waterfallStreps));
 
-        InitialDialogId = $"{nameof(KnowledgeDialog)}.mainFlow";
+        InitialDialogId = nameof(KnowledgeDialog);
     }
 
     private async Task<DialogTurnResult> SearchInKnowledgeBase(WaterfallStepContext stepContext, CancellationToken cancellationToken)
@@ -42,13 +42,13 @@ public class KnowledgeDialog : ComponentDialog
 
         if (!string.IsNullOrEmpty(chatAnswer))
         {
-            var promptMessage = MessageFactory.Text(chatAnswer);
+            //var promptMessage = MessageFactory.Text(chatAnswer);
             data.Answer = chatAnswer;
             data.FoundInKnowledgeBase = true;
 
             await _stateService.ConversationDataAccessor.SetAsync(stepContext.Context, data);
-        
-            return await stepContext.PromptAsync($"{nameof(KnowledgeDialog)}.message", new PromptOptions { Prompt = promptMessage }, cancellationToken);
+            return await stepContext.NextAsync(null, cancellationToken);
+            //return await stepContext.PromptAsync($"{nameof(KnowledgeDialog)}.message", new PromptOptions { Prompt = promptMessage }, cancellationToken);
         }
         else 
         {

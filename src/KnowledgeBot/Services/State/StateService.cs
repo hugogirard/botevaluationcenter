@@ -13,9 +13,13 @@ public class StateService : IStateService
 
     public IStatePropertyAccessor<ConversationData> ConversationDataAccessor { get; set; }
 
+    public IStatePropertyAccessor<Session> SessionAccessor { get; set; }
+
     public IStatePropertyAccessor<DialogState> DialogStateAccessor { get; set; }
 
     private readonly string PrivateConversationStateId = $"{nameof(StateService)}.PrivateConversationState";
+
+    private readonly string SessionConversationStateId = $"{nameof(StateService)}.SessionConversationState";
 
     public StateService(ConversationState conversationState)
     {
@@ -27,6 +31,7 @@ public class StateService : IStateService
     {
         ConversationDataAccessor = _conversationState.CreateProperty<ConversationData>(PrivateConversationStateId);
         DialogStateAccessor = _conversationState.CreateProperty<DialogState>("DialogState");
+        SessionAccessor = _conversationState.CreateProperty<Session>(SessionConversationStateId);
     }
 
 }

@@ -29,6 +29,18 @@ namespace KnowledgeBot.Bots
             {
                 if (member.Id != turnContext.Activity.Recipient.Id)
                 {
+                    // Create a new session
+                    var session = new Session();
+                    session.SessionId = turnContext.Activity.Conversation.Id;
+
+                    // Set the member id to the recipient id
+                    session.MemberId = member.AadObjectId  ??
+                                       member.Id;  
+
+                    session.Name = member.Name ?? "N/A";
+
+                    await _stateService.SessionAccessor.SetAsync(turnContext, session, cancellationToken);
+
                     await Dialog.RunAsync(turnContext, _stateService.ConversationState.CreateProperty<DialogState>("DialogState"), cancellationToken);
                 }
             }
