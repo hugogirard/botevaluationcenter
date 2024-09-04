@@ -39,7 +39,7 @@ namespace KnowledgeBot.Bots
                 {
                     // Create a new session
                     var session = new Session();
-                    session.SessionId = turnContext.Activity.Conversation.Id;
+                    session.ConversationId = turnContext.Activity.Conversation.Id;
 
 #if DEBUG
                     session.MemberId = _defaultMemberAadObjectId ??

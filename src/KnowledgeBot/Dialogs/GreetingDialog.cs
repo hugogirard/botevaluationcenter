@@ -43,6 +43,14 @@ namespace KnowledgeBot.Dialogs
 
             if (string.IsNullOrEmpty(message.Prompt))
             {
+                if (string.IsNullOrEmpty(message.SessionId)) 
+                { 
+                    var session = await _stateService.SessionAccessor.GetAsync(stepContext.Context);
+                    message.MemberId = session.MemberId;
+                    message.SessionId = session.Id;
+                    await _stateService.MessageAccessor.SetAsync(stepContext.Context, message);
+                }
+
                 string msg = "Hi, I am a knowledge bot assistant, please ask me a question";
                 var promptMessage = MessageFactory.Text(msg,msg,InputHints.ExpectingInput);
                 return await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
@@ -57,11 +65,7 @@ namespace KnowledgeBot.Dialogs
         {
             var session = await _stateService.SessionAccessor.GetAsync(stepContext.Context);
 
-            var message = await _stateService.MessageAccessor.GetAsync(stepContext.Context, () => new Message 
-            {
-                MemberId = session.MemberId,
-                SessionId = session.SessionId
-            });
+            var message = await _stateService.MessageAccessor.GetAsync(stepContext.Context);
 
             if (string.IsNullOrEmpty(message.Prompt))
             {
