@@ -12,6 +12,8 @@ public class MainDialog : ComponentDialog
     private readonly ILogger<MainDialog> _logger;
     private readonly IStateService _stateService;
 
+    private const string AGENT_FEEDBACK = "Cannot found the answer from your question, an agent will comeback to you soon";
+
     public MainDialog(ILogger<MainDialog> logger, 
                       GreetingDialog greetingDialog,
                       KnowledgeDialog knowledgeDialog,
@@ -70,9 +72,6 @@ public class MainDialog : ComponentDialog
         }
         else
         {            
-            var promptMessage = MessageFactory.Text("Cannot find answer in our knowledge base, searching in extended source...",
-                                                    inputHint: InputHints.IgnoringInput);
-            await stepContext.Context.SendActivityAsync(promptMessage, cancellationToken);
             return await stepContext.BeginDialogAsync(nameof(ExtendedSearchDialog), null, cancellationToken);
         }
     }
@@ -98,8 +97,7 @@ public class MainDialog : ComponentDialog
             return await stepContext.NextAsync(null, cancellationToken);            
         }
 
-        promptMessage = MessageFactory.Text("Cannot found the answer from your question, an agent will comeback to you soon",
-                                            inputHint: InputHints.IgnoringInput);
+        promptMessage = MessageFactory.Text(AGENT_FEEDBACK, inputHint: InputHints.IgnoringInput);
         await stepContext.Context.SendActivityAsync(promptMessage, cancellationToken);
 
         await _stateService.SaveMessageAsync(message);

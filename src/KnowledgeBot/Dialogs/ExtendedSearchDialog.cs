@@ -31,7 +31,7 @@ public class ExtendedSearchDialog : ComponentDialog
 
         AddDialog(new WaterfallDialog(nameof(ExtendedSearchDialog), waterfallStreps));
 
-        InitialDialogId = $"{nameof(ExtendedSearchDialog)}.mainFlow";
+        InitialDialogId = nameof(ExtendedSearchDialog);
     }
 
     private async Task<DialogTurnResult> SearchExtendedSource(WaterfallStepContext stepContext, CancellationToken cancellationToken)
@@ -44,6 +44,8 @@ public class ExtendedSearchDialog : ComponentDialog
         {
             message.Completion = answer;
             message.FoundInRetrieval = true;
+
+            await _stateService.SaveMessageAsync(message);
 
             await _stateService.MessageAccessor.SetAsync(stepContext.Context, message);
             return await stepContext.EndDialogAsync(null, cancellationToken);
