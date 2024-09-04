@@ -120,7 +120,8 @@ public class MainDialog : ComponentDialog
                                                      {
                                                         "Yes",
                                                         "No"
-                                                     })
+                                                     }),
+                                                     Style = ListStyle.HeroCard
                                                  }, cancellationToken);
         }
             
@@ -139,8 +140,10 @@ public class MainDialog : ComponentDialog
         message.QuestionFeedbackFromUser = true;
 
         if (choice.ToLowerInvariant() == "no") 
-        {
+        {            
             message.QuestionAnswered = false;
+            var prompt = MessageFactory.Text("Thank you for your feedback, an agent will comeback to you soon!");
+            await stepContext.Context.SendActivityAsync(prompt, cancellationToken);
         }
         else 
         { 
@@ -149,11 +152,15 @@ public class MainDialog : ComponentDialog
 
         await _stateService.SaveMessageAsync(message);
 
+        // Here we want to end the dialog here
+        if (!message.QuestionAnswered) 
+            return await stepContext.EndDialogAsync(null, cancellationToken);
+
         return await stepContext.NextAsync(null, cancellationToken);
     }
 
     private async Task<DialogTurnResult> FinalStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-    {
+    {        
         var prompt = MessageFactory.Text("Thank you for using our bot knowledge assistant, have a great day!");
         await stepContext.Context.SendActivityAsync(prompt, cancellationToken);
         return await stepContext.EndDialogAsync(null, cancellationToken);
