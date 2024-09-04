@@ -46,7 +46,7 @@ public class ChatService : IChatService
         _systemPromptRetrieval = @"You are an intelligent assistant helping employees with their questions.
                                    Use 'you' to refer to the individual asking the questions even if they ask with 'I'.
                                    Answer the following question using only the data provided in the context below don't add anything outside it.
-                                   If you cannot answer using the sources below, say you don't know. Use below example to answer
+                                   If you cannot answer using the sources below, say you don't know, don't make answer. Use below example to answer
                                    {{$context}}";
         _kernel = kernel;
         _chat = chat;
@@ -95,12 +95,12 @@ public class ChatService : IChatService
         }
     }
 
-    public async Task<string> GetAnswerFromExtendedSourceAsync(string question)
+    public async Task<RetrievalPluginResponse> GetAnswerFromExtendedSourceAsync(string question)
     {
         OpenAIPromptExecutionSettings openAIPromptExecutionSettings = new()
         {
             MaxTokens = 2000,
-            Temperature = 0.7,
+            Temperature = 1,
         };
 
         var history = new ChatHistory();
@@ -121,10 +121,10 @@ public class ChatService : IChatService
 
                 history.AddAssistantMessage(response.Items[0].ToString());
 
-                return response.Items[0].ToString();
+                return new RetrievalPluginResponse(retrieval.Key,response.Items[0].ToString());
             }
         }
 
-        return string.Empty;
+        return new RetrievalPluginResponse(string.Empty,string.Empty);
     }
 }

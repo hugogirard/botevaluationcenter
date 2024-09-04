@@ -24,8 +24,7 @@ public class KnowledgeDialog : ComponentDialog
     {
         var waterfallStreps = new WaterfallStep[]
         {
-                SearchInKnowledgeBase,
-                FinalStepAsync
+                SearchInKnowledgeBase                
         };
 
         AddDialog(new TextPrompt(nameof(TextPrompt)));
@@ -46,19 +45,14 @@ public class KnowledgeDialog : ComponentDialog
             message.FoundInKnowledgeDatabase = !kbResponse.Error; // Indicate if we have an error
             message.KnowledgeBaseName = kbResponse.Error ? string.Empty : kbResponse.KbName;
             
-            await _stateService.MessageAccessor.SetAsync(stepContext.Context, message);            
-            return await stepContext.NextAsync(null, cancellationToken);            
+            await _stateService.MessageAccessor.SetAsync(stepContext.Context, message);                        
         }
         else 
         {
             message.FoundInKnowledgeDatabase = false;
-            await _stateService.MessageAccessor.SetAsync(stepContext.Context, message);
-            return await stepContext.NextAsync(null, cancellationToken);
+            await _stateService.MessageAccessor.SetAsync(stepContext.Context, message);            
         }
-    }
 
-    private async Task<DialogTurnResult> FinalStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-    {
         return await stepContext.EndDialogAsync(null, cancellationToken);
     }
 }

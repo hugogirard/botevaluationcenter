@@ -25,8 +25,7 @@ public class ExtendedSearchDialog : ComponentDialog
     {
         var waterfallStreps = new WaterfallStep[]
         {
-                SearchExtendedSource,
-                FinalStepAsync
+                SearchExtendedSource                
         };
 
         AddDialog(new WaterfallDialog(nameof(ExtendedSearchDialog), waterfallStreps));
@@ -38,24 +37,18 @@ public class ExtendedSearchDialog : ComponentDialog
     {
         var message = await _stateService.MessageAccessor.GetAsync(stepContext.Context);
 
-        var answer = await _chatService.GetAnswerFromExtendedSourceAsync(message.Prompt);
+        var response = await _chatService.GetAnswerFromExtendedSourceAsync(message.Prompt);
 
-        if (!string.IsNullOrEmpty(answer))
+        if (!string.IsNullOrEmpty(response.Answer))
         {
-            message.Completion = answer;
+            message.Completion = response.Answer;
             message.FoundInRetrieval = true;
 
             await _stateService.SaveMessageAsync(message);
 
-            await _stateService.MessageAccessor.SetAsync(stepContext.Context, message);
-            return await stepContext.EndDialogAsync(null, cancellationToken);
+            await _stateService.MessageAccessor.SetAsync(stepContext.Context, message);    
         }
 
-        return await stepContext.EndDialogAsync(null, cancellationToken);
-    }
-
-    private async Task<DialogTurnResult> FinalStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-    {
         return await stepContext.EndDialogAsync(null, cancellationToken);
     }
 }

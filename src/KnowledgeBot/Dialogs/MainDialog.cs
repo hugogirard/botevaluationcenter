@@ -94,37 +94,67 @@ public class MainDialog : ComponentDialog
             await _stateService.SaveMessageAsync(message);
 
             await stepContext.Context.SendActivityAsync(promptMessage, cancellationToken);
-            return await stepContext.NextAsync(null, cancellationToken);            
-        }
 
-        promptMessage = MessageFactory.Text(AGENT_FEEDBACK, inputHint: InputHints.IgnoringInput);
-        await stepContext.Context.SendActivityAsync(promptMessage, cancellationToken);
+            // Ask if the user want an agent to comeback to him
+            string msg = "The answer provided was not found from one of our knowledge database, do you want an agent to validate and comeback to you?";
+            return await stepContext.PromptAsync(nameof(ChoicePrompt),
+                                                 new PromptOptions
+                                                 {
+                                                     Prompt = MessageFactory.Text(msg),
+                                                     Choices = ChoiceFactory.ToChoices(new List<string>
+                                                     {
+                                                        "Yes",
+                                                        "No"
+                                                     }),
+                                                     Style = ListStyle.HeroCard
+                                                 }, cancellationToken);
+        }
+        else 
+        {
+            promptMessage = MessageFactory.Text(AGENT_FEEDBACK, inputHint: InputHints.IgnoringInput);
+            await stepContext.Context.SendActivityAsync(promptMessage, cancellationToken);
+        }
 
         await _stateService.SaveMessageAsync(message);
 
-        return await stepContext.EndDialogAsync(null, cancellationToken);
+        return await EndConversation(stepContext, cancellationToken);
+
     }
 
     private async Task<DialogTurnResult> EvaluateAnswer(WaterfallStepContext stepContext, CancellationToken cancellationToken)
     {
         var message = await _stateService.MessageAccessor.GetAsync(stepContext.Context);
 
-        if (message.FoundInKnowledgeDatabase || message.FoundInRetrieval) 
+        if (message.FoundInKnowledgeDatabase)
         {
-            var promptMessage = MessageFactory.Text("Did the answer provided answered your question?");       
+            var promptMessage = MessageFactory.Text("Did the answer provided answered your question?");
             return await stepContext.PromptAsync(nameof(ChoicePrompt),
-                                                 new PromptOptions 
-                                                 { 
-                                                     Prompt = promptMessage, 
-                                                     Choices = ChoiceFactory.ToChoices(new List<string> 
+                                                 new PromptOptions
+                                                 {
+                                                     Prompt = promptMessage,
+                                                     Choices = ChoiceFactory.ToChoices(new List<string>
                                                      {
                                                         "Yes",
                                                         "No"
-                                                     })
+                                                     }),
+                                                     Style = ListStyle.HeroCard
                                                  }, cancellationToken);
         }
-            
+
+        // Validate here if the user want an agent to comeback to him
+        var choice = ((FoundChoice)stepContext.Result).Value;
+
+        message.QuestionFeedbackFromUser = true;
+
+        if (choice.ToLowerInvariant() == "yes")
+        {
+            message.QuestionAnswered = false;
+            var prompt = MessageFactory.Text("Thank you, an agent will comeback to you soon!");
+            await stepContext.Context.SendActivityAsync(prompt, cancellationToken);
+        }
+
         return await stepContext.EndDialogAsync(null, cancellationToken);
+                            
     }
     
     private async Task<DialogTurnResult> AcknowledgeQuestionAnswered(WaterfallStepContext stepContext, CancellationToken cancellationToken)
@@ -139,8 +169,10 @@ public class MainDialog : ComponentDialog
         message.QuestionFeedbackFromUser = true;
 
         if (choice.ToLowerInvariant() == "no") 
-        {
+        {            
             message.QuestionAnswered = false;
+            var prompt = MessageFactory.Text("Thank you for your feedback, an agent will comeback to you soon!");
+            await stepContext.Context.SendActivityAsync(prompt, cancellationToken);
         }
         else 
         { 
@@ -149,14 +181,27 @@ public class MainDialog : ComponentDialog
 
         await _stateService.SaveMessageAsync(message);
 
+        // Here we want to end the dialog here
+        if (!message.QuestionAnswered) 
+            return await stepContext.EndDialogAsync(null, cancellationToken);
+        
         return await stepContext.NextAsync(null, cancellationToken);
     }
 
     private async Task<DialogTurnResult> FinalStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-    {
+    {        
         var prompt = MessageFactory.Text("Thank you for using our bot knowledge assistant, have a great day!");
         await stepContext.Context.SendActivityAsync(prompt, cancellationToken);
-        return await stepContext.EndDialogAsync(null, cancellationToken);
+        return await EndConversation(stepContext, cancellationToken);
+    }
+
+    private async Task<DialogTurnResult> EndConversation(WaterfallStepContext stepContext, CancellationToken cancellationToken) 
+    {
+        var endOfConversation = Activity.CreateEndOfConversationActivity();
+        endOfConversation.Code = EndOfConversationCodes.CompletedSuccessfully;
+        await stepContext.Context.SendActivityAsync(endOfConversation, cancellationToken);
+
+        return await stepContext.EndDialogAsync(null, cancellationToken);        
     }
 
 }
