@@ -8,6 +8,6 @@ namespace KnowledgeBot.Services.Chat
     {
         Task<KnowledgeBaseResponse> GetAnswerFromKnowledgeBaseAsync(string question);
 
-        Task<string> GetAnswerFromExtendedSourceAsync(string question);
+        Task<RetrievalPluginResponse> GetAnswerFromExtendedSourceAsync(string question);
     }
 }

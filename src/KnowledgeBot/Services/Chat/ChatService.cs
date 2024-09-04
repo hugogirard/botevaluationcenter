@@ -95,7 +95,7 @@ public class ChatService : IChatService
         }
     }
 
-    public async Task<string> GetAnswerFromExtendedSourceAsync(string question)
+    public async Task<RetrievalPluginResponse> GetAnswerFromExtendedSourceAsync(string question)
     {
         OpenAIPromptExecutionSettings openAIPromptExecutionSettings = new()
         {
@@ -121,10 +121,10 @@ public class ChatService : IChatService
 
                 history.AddAssistantMessage(response.Items[0].ToString());
 
-                return response.Items[0].ToString();
+                return new RetrievalPluginResponse(retrieval.Key,response.Items[0].ToString());
             }
         }
 
-        return string.Empty;
+        return new RetrievalPluginResponse(string.Empty,string.Empty);
     }
 }
