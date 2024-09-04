@@ -6,6 +6,8 @@ namespace KnowledgeBot.Services.Chat
 {
     public interface IChatService
     {
-        Task<string> GetCompletionAsync(string question, ITurnContext<IMessageActivity> turnContext);
+        Task<KnowledgeBaseResponse> GetAnswerFromKnowledgeBaseAsync(string question);
+
+        Task<string> GetAnswerFromExtendedSourceAsync(string question);
     }
 }

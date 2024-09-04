@@ -1,4 +1,6 @@
 ﻿using KnowledgeBot;
+using KnowledgeBot.Bots;
+using KnowledgeBot.Dialogs;
 using KnowledgeBot.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Bot.Builder;
@@ -24,12 +26,13 @@ builder.Configuration.AddAzureAppConfiguration(options =>
     options.Connect(builder.Configuration["AppConfig"])
            .Select("KnowledgeBase")
            .ConfigureRefresh(refreshOptions =>
-                   refreshOptions.Register("KnowledgeBase", refreshAll: true)); ;           
+                   refreshOptions.Register("KnowledgeBase", refreshAll: true));         
 });
 
 builder.Services.AddSingleton<BotFrameworkAuthentication, ConfigurationBotFrameworkAuthentication>();
 
 builder.Services.AddSingleton<ILanguageService,LanguageService>();
+builder.Services.AddSingleton<ICosmosDbRepository, CosmosDbRepository>();
 
 builder.Services.RegisterSemanticKernel(builder.Configuration);
 
@@ -38,7 +41,16 @@ builder.Services.AddSingleton<IBotFrameworkHttpAdapter, AdapterWithErrorHandler>
 
 builder.Services.AddSingleton<IChatService, ChatService>();
 
-builder.Services.AddTransient<IBot, KnowledgeBot.Bots.KnowledgeBot>();
+builder.Services.RegisterState();
+
+// Register all dialog
+builder.Services.AddSingleton<GreetingDialog>();
+builder.Services.AddSingleton<KnowledgeDialog>();
+builder.Services.AddSingleton<ExtendedSearchDialog>();
+
+builder.Services.AddSingleton<MainDialog>();
+
+builder.Services.AddTransient<IBot, KnowledgeBot<MainDialog>>();
 
 var app = builder.Build();
 

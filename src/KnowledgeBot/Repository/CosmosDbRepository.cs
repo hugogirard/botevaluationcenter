@@ -3,14 +3,13 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Fluent;
 using Microsoft.Bot.Schema.Teams;
 using Microsoft.Extensions.Configuration;
-
 namespace KnowledgeBot.Repository;
 
 public class CosmosDbRepository : ICosmosDbRepository
 {
-    private readonly Dictionary<string, Microsoft.Azure.Cosmos.Container> _containers;
+    private readonly Microsoft.Azure.Cosmos.Container _container;
 
-    public CosmosDbRepository(IConfiguration configuration, string database, List<string> containers)
+    public CosmosDbRepository(IConfiguration configuration)
     {
         CosmosSerializationOptions options = new()
         {
@@ -22,25 +21,18 @@ public class CosmosDbRepository : ICosmosDbRepository
                                   .Build();
 
         Database db = client.GetDatabase(configuration["CosmosDB:Database"]);
-        _containers = new();
-        foreach (var containerName in containers)
-        {
-            if (!_containers.ContainsKey(containerName))
-                _containers.Add(containerName, db.GetContainer(containerName));
-        }
+        _container = db.GetContainer(configuration["CosmosDB:Container"]);
     }
 
-    public async Task<T> InsertAsync<T>(string partitionKey, T item, string containerName) where T : BaseEntity
+    public async Task<T> InsertAsync<T>(string partitionKey, T item) where T : BaseEntity
     {
-        var container = _containers[containerName];
         PartitionKey key = new(partitionKey);
 
-        return await container.CreateItemAsync(item);
+        return await _container.UpsertItemAsync(item, key);
     }
 
-    public async Task<IEnumerable<T>> GetItems<T>(string containerName, string query, IDictionary<string, object> parameters) where T : class
+    public async Task<IEnumerable<T>> GetItems<T>(string query, IDictionary<string, object> parameters) where T : class
     {
-        var container = _containers[containerName];
         QueryDefinition queryDefinition = new QueryDefinition(query);
 
         foreach (var p in parameters)
@@ -48,7 +40,7 @@ public class CosmosDbRepository : ICosmosDbRepository
             queryDefinition.WithParameter(p.Key, p.Value);
         }
 
-        FeedIterator<T> response = container.GetItemQueryIterator<T>(query);
+        FeedIterator<T> response = _container.GetItemQueryIterator<T>(query);
 
         List<T> entities = new List<T>();
         while (response.HasMoreResults)

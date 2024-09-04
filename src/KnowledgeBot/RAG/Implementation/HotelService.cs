@@ -9,6 +9,7 @@ using System;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Text.Json;
 
@@ -49,23 +50,36 @@ namespace KnowledgeBot.RAG.Implementation
                 {
                     VectorSearch = new()
                     {
-                        Queries = { new VectorizedQuery(embeddings) {
-                        KNearestNeighborsCount = 3,
-                        Fields = { "DescriptionVector" } } },
-                    }                    
+                        Queries = 
+                        { 
+                          new VectorizedQuery(embeddings) 
+                          {
+                            KNearestNeighborsCount = 3,
+                            Fields = { "DescriptionVector", "HotelNameVector" } 
+                          } 
+                        }
+                    },
+                    Size = 3
                 });
 
                 var sb = new StringBuilder();
+                var hotels = new List<string>();    
                 await foreach (SearchResult<Hotel> result in response.GetResultsAsync())
                 {
                     Hotel doc = result.Document;
-                    sb.AppendLine(doc.Description);
+                    hotels.Add(JsonSerializer.Serialize(doc));
+                    //sb.Append($"HotelName: {doc.Name}");
+                    //sb.AppendLine($"Description: {doc.Description}");
+                    //sb.AppendLine($"Category: {doc.Category}");
+                    //sb.AppendLine("");
+                    //hotels.Add(sb.ToString());
+                    //sb.Clear();
                 }
-
-                if (sb.Length > 0)
-                {
-                    return new List<string> { sb.ToString() };
-                }
+                return hotels;
+                //if (sb.Length > 0)
+                //{
+                //    return new List<string> { sb.ToString() };
+                //}
             }
             catch (Exception)
             {

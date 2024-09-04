@@ -4,6 +4,7 @@ using KnowledgeBot.Options;
 
 using KnowledgeBot.RAG;
 using KnowledgeBot.Services;
+using Microsoft.Bot.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -21,18 +22,15 @@ namespace KnowledgeBot.Infrastructure;
 
 public static class Extension
 {
-    /// <summary>
-    /// This method register Semantic Kernel and all needed plugins
-    /// </summary>    
-    /// 
-    public static object RegisterBasePlugin(Type pluginType, IServiceProvider sp) 
+    public static void RegisterState(this IServiceCollection services) 
     {
-        var constructor = pluginType.GetConstructors().First();
-        var parameters = constructor.GetParameters()
-                                    .Select(p => sp.GetService(p.ParameterType))
-                                    .ToArray();
-        var instance = Activator.CreateInstance(pluginType, parameters);
-        return instance;
+#if DEBUG
+        services.AddSingleton<IStorage, MemoryStorage>();
+#endif
+
+        services.AddSingleton<ConversationState>();
+
+        services.AddSingleton<IStateService, StateService>();
     }
 
     public static void RegisterSemanticKernel(this IServiceCollection services, IConfiguration configuration) 

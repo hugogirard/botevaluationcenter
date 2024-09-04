@@ -1,15 +1,15 @@
 ﻿namespace KnowledgeBot.Models
 {
-    public class Session
+    public class Session : BaseEntity
     {
-        public string Id { get; set; }
-
-        public string Type { get; set; }
-
+        public string Type { get; } = "Session";
+        
         /// <summary>
         /// Partion Key in CosmosDB
         /// </summary>
-        public string SessionId { get; set; }
-        
+        public string MemberId { get; set; }
+
+        public string Name { get; set; }
+        public string ConversationId { get; set; }
     }
 }
