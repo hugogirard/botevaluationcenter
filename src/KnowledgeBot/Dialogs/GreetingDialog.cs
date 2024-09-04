@@ -27,8 +27,7 @@ namespace KnowledgeBot.Dialogs
             var waterfallStreps = new WaterfallStep[]
             {
                 InitialStepAsync,
-                AckknowledgeMessageAsync,
-                FinalStepAsync
+                AckknowledgeMessageAsync                
             };
 
             AddDialog(new TextPrompt(nameof(TextPrompt)));
@@ -77,18 +76,15 @@ namespace KnowledgeBot.Dialogs
                 // and a message object too
                 await _stateService.SaveSessionAsync(session);
                 await _stateService.SaveMessageAsync(message);
-
-                var promptMessage = MessageFactory.Text("Searching for an answer in our internal knowledge databases", inputHint: InputHints.IgnoringInput); 
-                await stepContext.Context.SendActivityAsync(promptMessage, cancellationToken);
-                return await stepContext.NextAsync(null, cancellationToken);                
+   
+                // Show typing activities
+                await stepContext.Context.SendActivityAsync(new Activity 
+                { 
+                    Type = ActivityTypes.Typing 
+                }, cancellationToken);           
             }
 
-            return await stepContext.NextAsync(null, cancellationToken);
-        }
-
-        private async Task<DialogTurnResult> FinalStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            return await stepContext.EndDialogAsync(null, cancellationToken);
+            return await stepContext.EndDialogAsync(null, cancellationToken);            
         }
     }
 }
