@@ -20,7 +20,7 @@ namespace KnowledgeBot.Models
 
         public bool FoundInRetrieval { get; set; }
 
-        public bool QuestionNotAnswered { get; set; }
+        public bool QuestionAnswered { get; set; } = false;
 
         public string RetrievalPluginName { get; set; }
 
@@ -28,6 +28,7 @@ namespace KnowledgeBot.Models
         /// Partion Key in CosmosDB
         /// </summary>
         public string MemberId { get; set; }
+        public bool QuestionFeedbackFromUser { get; set; }
 
         public Message()
         {

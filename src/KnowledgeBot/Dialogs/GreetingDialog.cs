@@ -80,7 +80,7 @@ namespace KnowledgeBot.Dialogs
 
                 var promptMessage = MessageFactory.Text("Searching for an answer in our internal knowledge databases", inputHint: InputHints.IgnoringInput); 
                 await stepContext.Context.SendActivityAsync(promptMessage, cancellationToken);
-                return await stepContext.EndDialogAsync(null, cancellationToken);                
+                return await stepContext.NextAsync(null, cancellationToken);                
             }
 
             return await stepContext.NextAsync(null, cancellationToken);

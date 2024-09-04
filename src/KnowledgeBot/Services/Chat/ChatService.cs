@@ -18,6 +18,7 @@ namespace KnowledgeBot.Services.Chat;
 public class ChatService : IChatService
 {
     private readonly Kernel _kernel;
+    private readonly ILogger<ChatService> _logger;
     private readonly RetrievalServiceCollection _retrievalServiceCollection;
     private readonly KnowledgeBaseCollection _knowledgeBaseCollection;
     private readonly string _systemPromptKB;
@@ -29,9 +30,11 @@ public class ChatService : IChatService
     public ChatService(Kernel kernel,
                        RetrievalServiceCollection retrievalServiceCollection,
                        KnowledgeBaseCollection knowledgeBaseCollection,
+                       ILogger<ChatService> logger,
                        IChatCompletionService chat)
     {
-        _kernel = kernel;        
+        _kernel = kernel;
+        _logger = logger;
         _retrievalServiceCollection = retrievalServiceCollection;
         _knowledgeBaseCollection = knowledgeBaseCollection;
 
@@ -63,7 +66,8 @@ public class ChatService : IChatService
         {
             // Loop all the KBs
             foreach (var kb in _knowledgeBaseCollection.GetKnowledgeBases())
-            {                
+            {
+          
                 var answers = await kb.Value.GetAnswerKB(question);
                 if (answers.Any() && !answers.First().Contains("NA"))
                 {
@@ -75,7 +79,7 @@ public class ChatService : IChatService
                     var response = await _chat.GetChatMessageContentAsync(history, openAIPromptExecutionSettings, _kernel);
 
                     history.AddAssistantMessage(response.Items[0].ToString());
-                    return new KnowledgeBaseResponse(kb.Key, response.Items[0].ToString());                    
+                    return new KnowledgeBaseResponse(kb.Key, response.Items[0].ToString());
                 }
             }
 
@@ -84,6 +88,7 @@ public class ChatService : IChatService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, ex.Message);
             return new KnowledgeBaseResponse(string.Empty, 
                                              "Oh no, our bot is out of office, an agent will comeback to you soon", 
                                              true);            

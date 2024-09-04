@@ -34,6 +34,7 @@ public class MainDialog : ComponentDialog
         };
 
         AddDialog(new TextPrompt(nameof(TextPrompt)));
+        AddDialog(new ChoicePrompt(nameof(ChoicePrompt)));
         AddDialog(greetingDialog);
         AddDialog(knowledgeDialog);
         AddDialog(extendedSearchDialog);
@@ -59,6 +60,7 @@ public class MainDialog : ComponentDialog
         if (message.FoundInKnowledgeDatabase)
         {
             var promptMessage = MessageFactory.Text(message.Completion, inputHint: InputHints.IgnoringInput);
+            message.QuestionAnswered = true;
 
             // Update the message in the database
             await _stateService.SaveMessageAsync(message);
@@ -87,19 +89,19 @@ public class MainDialog : ComponentDialog
         if (message.FoundInRetrieval) 
         {
             promptMessage = MessageFactory.Text(message.Completion);
-            
+            message.QuestionAnswered = true;
+
             // Update the message in the database
             await _stateService.SaveMessageAsync(message);
 
-            await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
-            return await stepContext.NextAsync(null, cancellationToken);
+            await stepContext.Context.SendActivityAsync(promptMessage, cancellationToken);
+            return await stepContext.NextAsync(null, cancellationToken);            
         }
 
         promptMessage = MessageFactory.Text("Cannot found the answer from your question, an agent will comeback to you soon",
                                             inputHint: InputHints.IgnoringInput);
         await stepContext.Context.SendActivityAsync(promptMessage, cancellationToken);
 
-        message.QuestionNotAnswered = true;
         await _stateService.SaveMessageAsync(message);
 
         return await stepContext.EndDialogAsync(null, cancellationToken);
@@ -111,14 +113,17 @@ public class MainDialog : ComponentDialog
 
         if (message.FoundInKnowledgeDatabase || message.FoundInRetrieval) 
         {
-            var promptMessage = MessageFactory.Text("Did the answer provided answered your question?");
-            var choices = new List<Choice>()
-            {
-                new Choice("Yes"),
-                new Choice("No")
-            };
-            return await stepContext.PromptAsync(nameof(TextPrompt),
-                                                 new PromptOptions { Prompt = promptMessage, Choices = choices  }, cancellationToken);
+            var promptMessage = MessageFactory.Text("Did the answer provided answered your question?");       
+            return await stepContext.PromptAsync(nameof(ChoicePrompt),
+                                                 new PromptOptions 
+                                                 { 
+                                                     Prompt = promptMessage, 
+                                                     Choices = ChoiceFactory.ToChoices(new List<string> 
+                                                     {
+                                                        "Yes",
+                                                        "No"
+                                                     })
+                                                 }, cancellationToken);
         }
             
         return await stepContext.EndDialogAsync(null, cancellationToken);
@@ -126,18 +131,33 @@ public class MainDialog : ComponentDialog
     
     private async Task<DialogTurnResult> AcknowledgeQuestionAnswered(WaterfallStepContext stepContext, CancellationToken cancellationToken)
     {
-        var choice = (Choice)stepContext.Result;
+        var message = await _stateService.MessageAccessor.GetAsync(stepContext.Context);
 
-        if (choice.Value.ToLowerInvariant() == "no") 
+        if (!message.QuestionAnswered)
+            return await stepContext.NextAsync(null, cancellationToken);
+
+        var choice = ((FoundChoice)stepContext.Result).Value;
+        
+        message.QuestionFeedbackFromUser = true;
+
+        if (choice.ToLowerInvariant() == "no") 
+        {
+            message.QuestionAnswered = false;
+        }
+        else 
         { 
-            // Do something
+            message.QuestionAnswered = true;
         }
 
-        return await stepContext.EndDialogAsync(null, cancellationToken);
+        await _stateService.SaveMessageAsync(message);
+
+        return await stepContext.NextAsync(null, cancellationToken);
     }
 
     private async Task<DialogTurnResult> FinalStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
     {
+        var prompt = MessageFactory.Text("Thank you for using our bot knowledge assistant, have a great day!");
+        await stepContext.Context.SendActivityAsync(prompt, cancellationToken);
         return await stepContext.EndDialogAsync(null, cancellationToken);
     }
 
