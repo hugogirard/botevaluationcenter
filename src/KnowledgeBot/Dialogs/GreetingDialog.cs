@@ -81,10 +81,14 @@ namespace KnowledgeBot.Dialogs
                 await stepContext.Context.SendActivityAsync(new Activity 
                 { 
                     Type = ActivityTypes.Typing 
-                }, cancellationToken);           
+                }, cancellationToken);
+
+                // Introduce a small delay to ensure the typing indicator is shown
+                await Task.Delay(1000, cancellationToken);
+
             }
 
-            return await stepContext.EndDialogAsync(null, cancellationToken);            
+           return await stepContext.EndDialogAsync(null, cancellationToken);            
         }
     }
 }
