@@ -33,3 +33,46 @@ In this project, we utilize Azure App Configuration and the external store patte
    - **Decoupling Configuration from Code**: The external store pattern helps in decoupling the configuration data from the application code. This means that the knowledge base configurations are stored externally in Azure App Configuration rather than being hardcoded in the application.
    - **Scalability**: By using an external store, we can easily scale the application and manage configurations across multiple instances without inconsistencies.
    - **Flexibility**: The external store pattern provides the flexibility to integrate with various data sources and services, making it easier to manage complex configurations.
+
+### Configuration saved in Azure App Configuration
+
+The knowledge base configurations are stored in Azure App Configuration as JSON settings. Each knowledge base is defined with the following properties:
+
+```json
+{
+  "KnowledgeBase": {
+    "KnowledgeConfiguration": [
+      {
+        "displayName": "Quebec Fun Fact Knowledge Base",
+        "name": "quebecfunfact",
+        "appRoles": "Admin,QuebecAdmin"
+      },
+      {
+        "displayName": "Canada QnA Knowledge Base",
+        "name": "canadaqna",
+        "appRoles": "Admin,CanadaAdmin"
+      }
+    ]
+  }
+}
+```
+
+| Property      | Description                                                                                       |
+| ------------- | ------------------------------------------------------------------------------------------------- |
+| `displayName` | The display name of the knowledge base.                                                           |
+| `name`        | The unique identifier for the knowledge base (need to be the name inside Azure Language Service). |
+| `appRoles`    | The application roles that have access to this knowledge base.                                    |
+
+# Azure Language Service
+
+The knowledge base is stored in Azure Language Service, where it is created using the Azure Language Service and assigned a unique knowledge base ID for querying purposes.
+
+This sample includes two datasets located in the KBs folder. The datasets are in the form of XLSX files and are uploaded to Azure Language Service to create the knowledge base.
+
+# Deploy the solution
+
+In progress ...
+
+### Configure Knowledge Bases
+
+Go to your resource group where all
