@@ -35,6 +35,6 @@ public class KnowledgeService : IKnowledgeService
             }
         }
 
-        return answers;
+        return answers.Select(a => $"{_kbName}:{a}");        
     }
 }

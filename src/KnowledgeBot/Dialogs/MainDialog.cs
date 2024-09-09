@@ -164,27 +164,41 @@ public class MainDialog : ComponentDialog
         if (!message.QuestionAnswered)
             return await stepContext.NextAsync(null, cancellationToken);
 
-        var choice = ((FoundChoice)stepContext.Result).Value;
-        
-        if (choice.ToLowerInvariant() == "no") 
-        {            
-            message.QuestionAnswered = false;
-            message.AgentToComebackToUser = true;
-            var prompt = MessageFactory.Text("Thank you for your feedback, an agent will comeback to you soon!");
-            await stepContext.Context.SendActivityAsync(prompt, cancellationToken);
+        if (message.FoundInRetrieval)
+        {
+            var choice = ((FoundChoice)stepContext.Result).Value;
+
+            if (choice.ToLowerInvariant() == "no")
+            {
+                message.QuestionAnswered = false;
+                message.AgentToComebackToUser = true;
+                var prompt = MessageFactory.Text("Thank you for your feedback, an agent will comeback to you soon!");
+                await stepContext.Context.SendActivityAsync(prompt, cancellationToken);
+            }
+            else
+            {
+                message.QuestionAnswered = true;
+            }
+
+            await _stateService.SaveMessageAsync(message);
+
+            // Here we want to end the dialog here
+            if (!message.QuestionAnswered)
+                return await stepContext.EndDialogAsync(null, cancellationToken);
+
+            return await stepContext.NextAsync(null, cancellationToken);
         }
         else 
-        { 
-            message.QuestionAnswered = true;
+        {
+            var prompt = MessageFactory.Text("Cannot find the answer to your question; an agent will get back to you soon.");
+            await stepContext.Context.SendActivityAsync(prompt, cancellationToken);
+
+            message.AgentToComebackToUser = true;
+            await _stateService.SaveMessageAsync(message);
+
+            return await EndConversation(stepContext, cancellationToken);
         }
 
-        await _stateService.SaveMessageAsync(message);
-
-        // Here we want to end the dialog here
-        if (!message.QuestionAnswered) 
-            return await stepContext.EndDialogAsync(null, cancellationToken);
-        
-        return await stepContext.NextAsync(null, cancellationToken);
     }
 
     private async Task<DialogTurnResult> FinalStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)

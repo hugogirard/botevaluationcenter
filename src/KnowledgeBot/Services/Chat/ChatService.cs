@@ -41,7 +41,7 @@ public class ChatService : IChatService
         _systemPrompt = @"You are an intelligent assistant helping employees with their questions.
                           Answer ONLY with the facts listed in the list of sources below.
                           Don't provide the source of the information in the answer, only the fact.
-                          If there isn't enough information below, say you don't know in the answer and nothing else. Do not generate answers that don't use the sources below. If asking a clarifying question to the user would help, ask the question.
+                          If there isn't enough information below, your answer should always be I don't know. Do not generate answers that don't use the sources below.
                           Each source has a name followed by colon and the actual information.
 
                           sources: 
@@ -72,8 +72,7 @@ public class ChatService : IChatService
                 if (answers.Any() && !answers.First().Contains("NA"))
                 {
                     string context = string.Join(Environment.NewLine, answers);
-                    var skPrompt = $"{_systemPrompt}{context}";
-                        //_systemPrompt.Replace("{{$context}}", context);
+                    var skPrompt = $"{_systemPrompt}{context}";  
                     history.AddSystemMessage(skPrompt);
                     history.AddUserMessage(question);
 
@@ -111,15 +110,23 @@ public class ChatService : IChatService
             var answers = await retrieval.Value.GetAnswersAsync(question);
 
             if (answers.Any())
-            {
+            {                
                 string context = string.Join(Environment.NewLine, answers);
                 var skPrompt = $"{_systemPrompt}{context}";
-                //var skPrompt = _systemPrompt.Replace("{{$context}}", context);
 
                 history.AddSystemMessage(skPrompt);
                 history.AddUserMessage(question);
                 
                 var response = await _chat.GetChatMessageContentAsync(history, openAIPromptExecutionSettings, _kernel);
+
+                // Here is possible the bot answer I don't know, if it's the case, we need to return
+                // and empty answer
+                if (response.Items[0].ToString().Contains("i don't know", StringComparison.OrdinalIgnoreCase) ||
+                    response.Items[0].ToString().Contains("don't know", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Your logic here
+                    return new RetrievalPluginResponse(string.Empty, string.Empty);
+                }
 
                 history.AddAssistantMessage(response.Items[0].ToString());
 

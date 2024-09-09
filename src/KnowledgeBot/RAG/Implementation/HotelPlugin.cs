@@ -15,16 +15,16 @@ using System.Text.Json;
 
 namespace KnowledgeBot.RAG.Implementation
 {
-    public class HotelService : IRetrievalService
+    public class HotelPlugin : IRetrievalService
     {
-        private readonly ILogger<HotelService> _logger;
+        private readonly ILogger<HotelPlugin> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
         private readonly SearchClient _searchClient;
 
-        public HotelService(ILogger<HotelService> logger, 
-                            IConfiguration configuration,
-                            IHttpClientFactory httpClientFactory)
+        public HotelPlugin(ILogger<HotelPlugin> logger, 
+                           IConfiguration configuration,
+                           IHttpClientFactory httpClientFactory)
         {
             _logger = logger;
             _httpClientFactory = httpClientFactory;
