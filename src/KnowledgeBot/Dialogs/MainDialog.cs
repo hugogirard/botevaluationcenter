@@ -144,11 +144,11 @@ public class MainDialog : ComponentDialog
         // Validate here if the user want an agent to comeback to him
         var choice = ((FoundChoice)stepContext.Result).Value;
 
-        message.QuestionFeedbackFromUser = true;
-
         if (choice.ToLowerInvariant() == "yes")
         {
             message.QuestionAnswered = false;
+            message.AgentToComebackToUser = true;
+            await _stateService.SaveMessageAsync(message);
             var prompt = MessageFactory.Text("Thank you, an agent will comeback to you soon!");
             await stepContext.Context.SendActivityAsync(prompt, cancellationToken);
         }
@@ -166,11 +166,10 @@ public class MainDialog : ComponentDialog
 
         var choice = ((FoundChoice)stepContext.Result).Value;
         
-        message.QuestionFeedbackFromUser = true;
-
         if (choice.ToLowerInvariant() == "no") 
         {            
             message.QuestionAnswered = false;
+            message.AgentToComebackToUser = true;
             var prompt = MessageFactory.Text("Thank you for your feedback, an agent will comeback to you soon!");
             await stepContext.Context.SendActivityAsync(prompt, cancellationToken);
         }

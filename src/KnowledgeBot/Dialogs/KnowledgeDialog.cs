@@ -40,11 +40,13 @@ public class KnowledgeDialog : ComponentDialog
         var kbResponse = await _chatService.GetAnswerFromKnowledgeBaseAsync(message.Prompt);
 
         if (!string.IsNullOrEmpty(kbResponse.Answer))
-        {            
-            message.Completion = kbResponse.Answer;
+        {
+            string completion = $"{kbResponse.KbName}: {kbResponse.Answer}";
+
+            message.Completion = completion;
             message.FoundInKnowledgeDatabase = !kbResponse.Error; // Indicate if we have an error
             message.KnowledgeBaseName = kbResponse.Error ? string.Empty : kbResponse.KbName;
-            
+                        
             await _stateService.MessageAccessor.SetAsync(stepContext.Context, message);                        
         }
         else 
