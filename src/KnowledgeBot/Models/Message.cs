@@ -28,7 +28,8 @@ namespace KnowledgeBot.Models
         /// Partion Key in CosmosDB
         /// </summary>
         public string MemberId { get; set; }
-        public bool QuestionFeedbackFromUser { get; set; }
+
+        public bool AgentToComebackToUser { get; set; }
 
         public Message()
         {
