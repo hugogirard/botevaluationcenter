@@ -75,14 +75,4 @@ public class MainDialog : ComponentDialog
         }
         return await stepContext.EndDialogAsync(null, cancellationToken);
     }
-
-    //private async Task<DialogTurnResult> EndConversation(WaterfallStepContext stepContext, CancellationToken cancellationToken) 
-    //{
-    //    var endOfConversation = Activity.CreateEndOfConversationActivity();
-    //    endOfConversation.Code = EndOfConversationCodes.CompletedSuccessfully;
-    //    await stepContext.Context.SendActivityAsync(endOfConversation, cancellationToken);
-
-    //    return await stepContext.EndDialogAsync(null, cancellationToken);        
-    //}
-
 }
