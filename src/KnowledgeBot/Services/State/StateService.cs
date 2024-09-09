@@ -4,12 +4,12 @@ namespace KnowledgeBot.Services.State;
 
 public class StateService : IStateService
 {
-    private readonly ConversationState _conversationState;
+    private readonly UserState _userState;
     private readonly ICosmosDbRepository _cosmosDbRepository;
     private readonly ILogger<StateService> _logger;
     private readonly DialogState _dialogState;
 
-    public ConversationState ConversationState => _conversationState;
+    public UserState UserState => _userState;
 
     public IStatePropertyAccessor<Message> MessageAccessor { get; set; }
 
@@ -21,11 +21,11 @@ public class StateService : IStateService
 
     private readonly string SessionConversationStateId = $"{nameof(StateService)}.SessionConversationState";
 
-    public StateService(ConversationState conversationState,
+    public StateService(UserState conversationState,
                         ILogger<StateService> logger,
                         ICosmosDbRepository cosmosDbRepository)
     {
-        _conversationState = conversationState;
+        _userState = conversationState;
         _cosmosDbRepository = cosmosDbRepository;
         _logger = logger;
 
@@ -34,9 +34,9 @@ public class StateService : IStateService
 
     private void InitializeAccessor()
     {
-        MessageAccessor = _conversationState.CreateProperty<Message>(PrivateConversationStateId);
-        DialogStateAccessor = _conversationState.CreateProperty<DialogState>("DialogState");
-        SessionAccessor = _conversationState.CreateProperty<Session>(SessionConversationStateId);
+        MessageAccessor = _userState.CreateProperty<Message>(PrivateConversationStateId);
+        DialogStateAccessor = _userState.CreateProperty<DialogState>("DialogState");
+        SessionAccessor = _userState.CreateProperty<Session>(SessionConversationStateId);
     }
 
     public async Task SaveSessionAsync(Session session)
