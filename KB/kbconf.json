@@ -12,5 +12,17 @@
                 "appRoles": "Admin,CanadaAdmin"
             }
         ]
+    },
+    "Retrieval": {
+        "RetrivalConfiguration": [
+            {
+                "displayName": "Hotel Plugin",
+                "name": "HotelPlugin",
+                "appRoles": "Admin,HotelAdmin"
+            }
+        ]
+    },
+    "SupportAgent": {
+        "appRoles": "SupportAgent"
     }
 }

@@ -41,7 +41,7 @@ public class KnowledgeDialog : ComponentDialog
 
         if (!string.IsNullOrEmpty(kbResponse.Answer))
         {
-            string completion = $"{kbResponse.KbName}: {kbResponse.Answer}";
+            string completion = kbResponse.Answer;
 
             message.Completion = completion;
             message.FoundInKnowledgeDatabase = !kbResponse.Error; // Indicate if we have an error

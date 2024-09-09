@@ -43,6 +43,7 @@ public class ExtendedSearchDialog : ComponentDialog
         {
             message.Completion = response.Answer;
             message.FoundInRetrieval = true;
+            message.RetrievalPluginName = response.RetrievalPluginName;
 
             await _stateService.SaveMessageAsync(message);
 
