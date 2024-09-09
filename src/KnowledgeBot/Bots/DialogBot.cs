@@ -22,7 +22,7 @@ public class DialogBot<T>: ActivityHandler where T : Dialog
     {
         await base.OnTurnAsync(turnContext, cancellationToken);
 
-        await _stateService.ConversationState.SaveChangesAsync(turnContext, false, cancellationToken);
+        await _stateService.UserState.SaveChangesAsync(turnContext, false, cancellationToken);
     }
 
     protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)

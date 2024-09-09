@@ -58,7 +58,7 @@ namespace KnowledgeBot.Bots
 
                     await _stateService.SessionAccessor.SetAsync(turnContext, session, cancellationToken);
 
-                    await Dialog.RunAsync(turnContext, _stateService.ConversationState.CreateProperty<DialogState>("DialogState"), cancellationToken);
+                    await Dialog.RunAsync(turnContext, _stateService.UserState.CreateProperty<DialogState>("DialogState"), cancellationToken);
                 }
             }
         }

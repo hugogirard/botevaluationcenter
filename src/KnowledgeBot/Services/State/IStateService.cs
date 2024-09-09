@@ -10,7 +10,7 @@ namespace KnowledgeBot.Services.State
 
         IStatePropertyAccessor<Session> SessionAccessor { get; set; }
 
-        ConversationState ConversationState { get; }
+        UserState UserState { get; }
 
         Task SaveSessionAsync(Session session);
 
