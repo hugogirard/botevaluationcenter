@@ -55,7 +55,8 @@ namespace KnowledgeBot.RAG.Implementation
                           new VectorizedQuery(embeddings) 
                           {
                             KNearestNeighborsCount = 3,
-                            Fields = { "DescriptionVector", "HotelNameVector" } 
+                            Fields = { "DescriptionVector", "HotelNameVector" },
+                            Exhaustive = true
                           } 
                         }
                     },
@@ -67,19 +68,9 @@ namespace KnowledgeBot.RAG.Implementation
                 await foreach (SearchResult<Hotel> result in response.GetResultsAsync())
                 {
                     Hotel doc = result.Document;
-                    hotels.Add(JsonSerializer.Serialize(doc));
-                    //sb.Append($"HotelName: {doc.Name}");
-                    //sb.AppendLine($"Description: {doc.Description}");
-                    //sb.AppendLine($"Category: {doc.Category}");
-                    //sb.AppendLine("");
-                    //hotels.Add(sb.ToString());
-                    //sb.Clear();
+                    hotels.Add($"{doc.HotelName}: {JsonSerializer.Serialize(doc)}");
                 }
                 return hotels;
-                //if (sb.Length > 0)
-                //{
-                //    return new List<string> { sb.ToString() };
-                //}
             }
             catch (Exception)
             {

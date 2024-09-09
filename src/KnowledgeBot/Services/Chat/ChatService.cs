@@ -22,7 +22,7 @@ public class ChatService : IChatService
     private readonly RetrievalServiceCollection _retrievalServiceCollection;
     private readonly KnowledgeBaseCollection _knowledgeBaseCollection;
     private readonly string _systemPromptKB;
-    private readonly string _systemPromptRetrieval;
+    private readonly string _systemPrompt;
     private readonly IChatCompletionService _chat;
     private readonly string _systemPromptPlugin;
 
@@ -38,16 +38,16 @@ public class ChatService : IChatService
         _retrievalServiceCollection = retrievalServiceCollection;
         _knowledgeBaseCollection = knowledgeBaseCollection;
 
-        _systemPromptKB = @"You are an intelligent assistant helping employees with their questions.
-                             Answer the following question using only the data provided in the context below.           
-                             Just here the context provided to answer but make the sentence better. Don't add any more information. 
-                             context: {{$context}}";
+        _systemPrompt = @"You are an intelligent assistant helping employees with their questions.
+                          Answer ONLY with the facts listed in the list of sources below.
+                          You never tell the source of the information in the answer.
+                          If there isn't enough information below, say you don't know. Do not generate answers that don't use the sources below. If asking a clarifying question to the user would help, ask the question.
+                          Each source has a name followed by colon and the actual information.
 
-        _systemPromptRetrieval = @"You are an intelligent assistant helping employees with their questions.
-                                   Use 'you' to refer to the individual asking the questions even if they ask with 'I'.
-                                   Answer the following question using only the data provided in the context below don't add anything outside it.
-                                   If you cannot answer using the sources below, say you don't know, don't make answer. Use below example to answer
-                                   {{$context}}";
+                          sources: 
+                          -----------
+                          ";
+
         _kernel = kernel;
         _chat = chat;
     }
@@ -72,7 +72,8 @@ public class ChatService : IChatService
                 if (answers.Any() && !answers.First().Contains("NA"))
                 {
                     string context = string.Join(Environment.NewLine, answers);
-                    var skPrompt = _systemPromptKB.Replace("{{$context}}", context);
+                    var skPrompt = $"{_systemPrompt}{context}";
+                        //_systemPrompt.Replace("{{$context}}", context);
                     history.AddSystemMessage(skPrompt);
                     history.AddUserMessage(question);
 
@@ -112,9 +113,10 @@ public class ChatService : IChatService
             if (answers.Any())
             {
                 string context = string.Join(Environment.NewLine, answers);
-                var skPrompt = _systemPromptRetrieval.Replace("{{$context}}", context);
+                var skPrompt = $"{_systemPrompt}{context}";
+                //var skPrompt = _systemPrompt.Replace("{{$context}}", context);
 
-                history.AddSystemMessage(context);
+                history.AddSystemMessage(skPrompt);
                 history.AddUserMessage(question);
                 
                 var response = await _chat.GetChatMessageContentAsync(history, openAIPromptExecutionSettings, _kernel);
