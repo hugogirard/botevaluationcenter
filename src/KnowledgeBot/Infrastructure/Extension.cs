@@ -28,7 +28,7 @@ public static class Extension
         services.AddSingleton<IStorage, MemoryStorage>();
 #endif
 
-        services.AddSingleton<ConversationState>();
+        services.AddSingleton<UserState>();
 
         services.AddSingleton<IStateService, StateService>();
     }

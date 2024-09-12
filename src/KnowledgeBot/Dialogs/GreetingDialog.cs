@@ -26,8 +26,8 @@ namespace KnowledgeBot.Dialogs
         {
             var waterfallStreps = new WaterfallStep[]
             {
-                InitialStepAsync,
-                AckknowledgeMessageAsync                
+                InitialStep,
+                RetrieveQuestion                
             };
 
             AddDialog(new TextPrompt(nameof(TextPrompt)));
@@ -36,7 +36,7 @@ namespace KnowledgeBot.Dialogs
             InitialDialogId = nameof(GreetingDialog);
         }
 
-        private async Task<DialogTurnResult> InitialStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        private async Task<DialogTurnResult> InitialStep(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {            
             var message = await _stateService.MessageAccessor.GetAsync(stepContext.Context, () => new Message());
 
@@ -60,7 +60,7 @@ namespace KnowledgeBot.Dialogs
             }
         }
 
-        private async Task<DialogTurnResult> AckknowledgeMessageAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken) 
+        private async Task<DialogTurnResult> RetrieveQuestion(WaterfallStepContext stepContext, CancellationToken cancellationToken) 
         {
             var session = await _stateService.SessionAccessor.GetAsync(stepContext.Context);
 

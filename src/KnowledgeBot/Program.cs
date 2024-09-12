@@ -31,13 +31,13 @@ builder.Configuration.AddAzureAppConfiguration(options =>
 
 builder.Services.AddSingleton<BotFrameworkAuthentication, ConfigurationBotFrameworkAuthentication>();
 
+// Create the Bot Adapter with error handling enabled.
+builder.Services.AddSingleton<IBotFrameworkHttpAdapter, AdapterWithErrorHandler>();
+
 builder.Services.AddSingleton<ILanguageService,LanguageService>();
 builder.Services.AddSingleton<ICosmosDbRepository, CosmosDbRepository>();
 
 builder.Services.RegisterSemanticKernel(builder.Configuration);
-
-// Create the Bot Adapter with error handling enabled.
-builder.Services.AddSingleton<IBotFrameworkHttpAdapter, AdapterWithErrorHandler>();
 
 builder.Services.AddSingleton<IChatService, ChatService>();
 

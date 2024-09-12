@@ -28,7 +28,7 @@ public class KnowledgeDialog : ComponentDialog
         var waterfallStreps = new WaterfallStep[]
         {
                 SearchInKnowledgeBase,
-                ValidateAnswerFound,
+                ValidateAnswer,
                 FinalStep
         };
 
@@ -68,7 +68,7 @@ public class KnowledgeDialog : ComponentDialog
         return await stepContext.NextAsync(message, cancellationToken);
     }
 
-    private async Task<DialogTurnResult> ValidateAnswerFound(WaterfallStepContext stepContext, CancellationToken cancellationToken) 
+    private async Task<DialogTurnResult> ValidateAnswer(WaterfallStepContext stepContext, CancellationToken cancellationToken) 
     {
         var message = (Message)stepContext.Result;
 

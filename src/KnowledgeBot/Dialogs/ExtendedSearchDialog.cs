@@ -28,7 +28,7 @@ public class ExtendedSearchDialog : ComponentDialog
         var waterfallStreps = new WaterfallStep[]
         {
                 SearchExtendedSource,
-                ValidateAnswerFound,
+                ValidateAnswer,
                 FinalStep
         };
 
@@ -63,7 +63,7 @@ public class ExtendedSearchDialog : ComponentDialog
         return await stepContext.NextAsync(null, cancellationToken);
     }
 
-    private async Task<DialogTurnResult> ValidateAnswerFound(WaterfallStepContext stepContext, CancellationToken cancellationToken) 
+    private async Task<DialogTurnResult> ValidateAnswer(WaterfallStepContext stepContext, CancellationToken cancellationToken) 
     {
         var message = await _stateService.MessageAccessor.GetAsync(stepContext.Context);
 
