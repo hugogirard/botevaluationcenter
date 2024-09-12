@@ -37,14 +37,14 @@ public class MainDialog : ComponentDialog
         };
 
         // Add the login dialog
-        AddDialog(new OAuthPrompt(nameof(OAuthPrompt),
-            new OAuthPromptSettings
-            {
-                ConnectionName = configuration["ConnectionName"],
-                Text = "Please Sign In",
-                Title = "Login",
-                Timeout = 300000, // User has 5 minutes to login
-            }));
+        //AddDialog(new OAuthPrompt(nameof(OAuthPrompt),
+        //    new OAuthPromptSettings
+        //    {
+        //        ConnectionName = configuration["ConnectionName"],
+        //        Text = "Please Sign In",
+        //        Title = "Login",
+        //        Timeout = 300000, // User has 5 minutes to login
+        //    }));
 
         AddDialog(new TextPrompt(nameof(TextPrompt)));
         AddDialog(new ChoicePrompt(nameof(ChoicePrompt)));
