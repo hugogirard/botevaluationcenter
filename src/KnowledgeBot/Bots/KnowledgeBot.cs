@@ -41,21 +41,6 @@ namespace KnowledgeBot.Bots
                     var session = new Session();
                     session.ConversationId = turnContext.Activity.Conversation.Id;
 
-#if DEBUG
-                    session.MemberId = _defaultMemberAadObjectId ??
-                                       member.Id;
-#else
-                    // Set the member id to the recipient id
-                    session.MemberId = member.AadObjectId  ??
-                                       member.Id;
-#endif
-
-#if DEBUG
-                    session.Name = _defaultUsername;
-#else
-                    session.Name = member.Name ?? "N/A";
-#endif
-
                     await _stateService.SessionAccessor.SetAsync(turnContext, session, cancellationToken);
 
                     await Dialog.RunAsync(turnContext, _stateService.UserState.CreateProperty<DialogState>("DialogState"), cancellationToken);

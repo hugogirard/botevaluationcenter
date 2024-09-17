@@ -17,9 +17,7 @@ public class StateService : IStateService
 
     public IStatePropertyAccessor<DialogState> DialogStateAccessor { get; set; }
 
-    private readonly string PrivateConversationStateId = $"{nameof(StateService)}.MessageConversationState";
-
-    private readonly string SessionConversationStateId = $"{nameof(StateService)}.SessionConversationState";
+    public IStatePropertyAccessor<UserInfo> UserInfoAccessor { get; set; }
 
     public StateService(UserState conversationState,
                         ILogger<StateService> logger,
@@ -34,9 +32,10 @@ public class StateService : IStateService
 
     private void InitializeAccessor()
     {
-        MessageAccessor = _userState.CreateProperty<Message>(PrivateConversationStateId);
+        MessageAccessor = _userState.CreateProperty<Message>("Message");
         DialogStateAccessor = _userState.CreateProperty<DialogState>("DialogState");
-        SessionAccessor = _userState.CreateProperty<Session>(SessionConversationStateId);
+        SessionAccessor = _userState.CreateProperty<Session>("Session");
+        UserInfoAccessor = _userState.CreateProperty<UserInfo>("UserInfo");
     }
 
     public async Task SaveSessionAsync(Session session)

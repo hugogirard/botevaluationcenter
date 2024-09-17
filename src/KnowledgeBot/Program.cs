@@ -40,10 +40,12 @@ builder.Services.AddSingleton<ICosmosDbRepository, CosmosDbRepository>();
 builder.Services.RegisterSemanticKernel(builder.Configuration);
 
 builder.Services.AddSingleton<IChatService, ChatService>();
+builder.Services.AddSingleton<IUserRepository, UserRepository>();
 
 builder.Services.RegisterState();
 
 // Register all dialog
+builder.Services.AddSingleton<AuthenticationDialog>();
 builder.Services.AddSingleton<GreetingDialog>();
 builder.Services.AddSingleton<KnowledgeDialog>();
 builder.Services.AddSingleton<ExtendedSearchDialog>();
